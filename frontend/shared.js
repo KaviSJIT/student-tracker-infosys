@@ -1,45 +1,32 @@
-// ═══════════════════════════════════════════════════════
-//  CompanyConnect – Firebase + API Shared Layer
-// ═══════════════════════════════════════════════════════
-
 const API = 'http://localhost:5000/api';
 
-// Firebase Web Config — replace with your actual web app config from Firebase Console
 const firebaseConfig = {
-  apiKey: "AIzaSyDhzoQJHbjUygADTnV1DNNWmJkFPvczhKY",
-  authDomain: "infosys-student-tracker.firebaseapp.com",
-  projectId: "infosys-student-tracker",
-  storageBucket: "infosys-student-tracker.firebasestorage.app",
-  messagingSenderId: "887323672274",
-  appId: "1:887323672274:web:32655949c3b6c53c9e770b",
-  measurementId: "G-FY5M2MT6R3"
+  apiKey: "AIzaSyBNxLSTxcwQbTohuI-dfI3wO_zOFJtof34",
+  authDomain: "student-tracker-infosys.firebaseapp.com",
+  projectId: "student-tracker-infosys",
+  storageBucket: "student-tracker-infosys.firebasestorage.app",
+  messagingSenderId: "660446692211",
+  appId: "1:660446692211:web:bf0e2c748fa7e7579bfb06",
+  measurementId: "G-93342Z6FSZ"
 };
 
-// Initialize Firebase (loaded via CDN in HTML)
 if (typeof firebase !== 'undefined' && !firebase.apps?.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
-// ── TOKEN STORAGE ─────────────────────────────────────
 const Auth = {
-  setToken: (t) => localStorage.setItem('authToken', t),
+  setToken: t => localStorage.setItem('authToken', t),
   getToken: () => localStorage.getItem('authToken'),
-  clearToken: () => localStorage.removeItem('authToken'),
-  setUser: (u) => localStorage.setItem('currentUser', JSON.stringify(u)),
+  setUser: u => localStorage.setItem('currentUser', JSON.stringify(u)),
   getUser: () => JSON.parse(localStorage.getItem('currentUser') || 'null'),
-  clearUser: () => localStorage.removeItem('currentUser'),
-  setAdmin: (a) => localStorage.setItem('currentAdmin', JSON.stringify(a)),
+  setAdmin: a => localStorage.setItem('currentAdmin', JSON.stringify(a)),
   getAdmin: () => JSON.parse(localStorage.getItem('currentAdmin') || 'null'),
-  clearAdmin: () => localStorage.removeItem('currentAdmin'),
   logout: () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('currentAdmin');
+    localStorage.clear();
     if (typeof firebase !== 'undefined') firebase.auth().signOut();
   }
 };
 
-// ── API HELPER ────────────────────────────────────────
 async function apiCall(method, path, body = null) {
   const headers = { 'Content-Type': 'application/json' };
   const token = Auth.getToken();
@@ -52,7 +39,6 @@ async function apiCall(method, path, body = null) {
   return data;
 }
 
-// ── AUTH HELPERS ──────────────────────────────────────
 function requireStudent() {
   const u = Auth.getUser();
   if (!u) { window.location.href = 'login.html'; return null; }
@@ -64,7 +50,6 @@ function requireAdmin() {
   return a;
 }
 
-// ── FORMAT HELPERS ────────────────────────────────────
 function formatDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -82,7 +67,7 @@ function badgeHTML(status) {
 }
 
 function typeBadge(type) {
-  const map = { 'Training': 'badge-training', 'Internship': 'badge-internship', 'Certification': 'badge-certification', 'Workshop': 'badge-workshop' };
+  const map = { Training: 'badge-training', Internship: 'badge-internship', Certification: 'badge-certification', Workshop: 'badge-workshop' };
   return `<span class="badge ${map[type] || ''}">${type || ''}</span>`;
 }
 
@@ -94,35 +79,42 @@ function showAlert(containerId, msg, type = 'success') {
   setTimeout(() => { el.innerHTML = ''; }, 5000);
 }
 
-function genId(prefix) { return prefix + Date.now().toString(36).toUpperCase(); }
-
-// ── NAV BUILDERS ──────────────────────────────────────
 function buildStudentNav(active) {
-  const nav = [
+  return [
     { href: 'dashboard.html', icon: '📊', label: 'Dashboard' },
     { href: 'profile.html', icon: '👤', label: 'My Profile' },
     { href: 'programs.html', icon: '📚', label: 'Programs' },
     { href: 'participation.html', icon: '📝', label: 'Submit Participation' },
     { href: 'upload.html', icon: '📎', label: 'Upload Documents' },
     { href: 'status.html', icon: '🔍', label: 'Track Status' },
-  ];
-  return nav.map(n => `<a href="${n.href}" class="${active === n.href ? 'active' : ''}"><span class="icon">${n.icon}</span>${n.label}</a>`).join('');
+  ].map(n => `<a href="${n.href}" class="${active === n.href ? 'active' : ''}"><span class="icon">${n.icon}</span>${n.label}</a>`).join('');
 }
 
 function buildAdminNav(active) {
-  const nav = [
+  return [
     { href: 'admin-dashboard.html', icon: '📊', label: 'Dashboard' },
     { href: 'admin-students.html', icon: '👥', label: 'Students' },
     { href: 'admin-pending.html', icon: '⏳', label: 'Pending Approvals' },
     { href: 'admin-verify.html', icon: '✅', label: 'Verify Documents' },
     { href: 'admin-programs.html', icon: '📚', label: 'Programs' },
+    { href: 'admin-search.html', icon: '🔍', label: 'Search & Filter' },
     { href: 'admin-reports.html', icon: '📄', label: 'Reports' },
-  ];
-  return nav.map(n => `<a href="${n.href}" class="${active === n.href ? 'active' : ''}"><span class="icon">${n.icon}</span>${n.label}</a>`).join('');
+  ].map(n => `<a href="${n.href}" class="${active === n.href ? 'active' : ''}"><span class="icon">${n.icon}</span>${n.label}</a>`).join('');
 }
 
-// ── LOGOUT HANDLER ────────────────────────────────────
-function doLogout(redirectTo = 'login.html') {
+function doLogout(redirect = 'login.html') {
   Auth.logout();
-  window.location.href = redirectTo;
+  window.location.href = redirect;
+}
+
+function exportToExcel(data, filename) {
+  if (!data.length) return alert('No data to export.');
+  const keys = Object.keys(data[0]);
+  let csv = keys.join('\t') + '\n';
+  data.forEach(row => { csv += keys.map(k => `"${row[k] ?? ''}"`).join('\t') + '\n'; });
+  const blob = new Blob([csv], { type: 'application/vnd.ms-excel' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${filename}_${new Date().toISOString().split('T')[0]}.xls`;
+  a.click();
 }

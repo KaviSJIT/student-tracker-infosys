@@ -4,18 +4,12 @@ exports.searchStudents = async (req, res) => {
   try {
     const { department, year, program, status } = req.query;
     let studentsRef = db.collection("students");
-
-    if (department) {
-      studentsRef = studentsRef.where("department", "==", department);
-    }
-    if (year) {
-      studentsRef = studentsRef.where("year", "==", parseInt(year)); // Assuming year is stored as a number
-    }
-    // For program and status, we might need to query the participations collection
-    // This is a simplified example, a more robust solution would involve joins or denormalization
+    if (department) studentsRef = studentsRef.where("department", "==", department);
 
     const snapshot = await studentsRef.get();
     let students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    if (year) students = students.filter(s => String(s.year) === String(year));
 
     // Further filter by program and status if needed (requires fetching participations)
     if (program || status) {

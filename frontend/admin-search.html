@@ -8,78 +8,51 @@
 <body>
   <nav class="navbar">
     <a href="index.html" class="nav-brand" style="text-decoration:none;"><div class="brand-hex">⬡</div><div><div class="brand-name">CompanyConnect</div><div class="brand-sub">Admin Panel</div></div></a>
-    <div class="nav-links"><span id="navAdmin" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="admin-login.html" onclick="DB.set('currentAdmin',null)" class="btn-nav">Logout</a></div>
+    <div class="nav-links"><span id="navAdmin" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="admin-login.html" onclick="doLogout('admin-login.html')" class="btn-nav">Logout</a></div>
   </nav>
   <div class="app-layout">
     <aside class="sidebar"><div class="sidebar-section"><div class="sidebar-label">Admin Menu</div><div id="sidebarLinks"></div></div></aside>
     <main class="main-content">
-      <div class="page-header anim"><div class="breadcrumb">Admin / <span>Search & Filter</span></div><h1>Search & Filter</h1><p>Find students by department, year, program type, and status.</p></div>
+      <div class="page-header anim"><div class="breadcrumb">Admin / <span>Search & Filter</span></div><h1>Search & Filter</h1><p>Find students by department, batch, program, and status.</p></div>
 
-      <!-- FILTER CARD -->
       <div class="card anim anim-1 mb-4">
         <div class="card-header"><div class="card-title">Filters</div><button class="btn btn-sm btn-outline" onclick="clearFilters()">Clear All</button></div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
-          <div class="form-group" style="margin:0;">
-            <label class="form-label">Department</label>
-            <select id="fDept" class="form-control">
-              <option value="">All Departments</option>
+          <div class="form-group" style="margin:0;"><label class="form-label">Department</label>
+            <select id="fDept" class="form-control"><option value="">All Departments</option>
               <option>CSE</option><option>IT</option><option>AML</option><option>ADS</option>
-              <option>ECE</option><option>EEE</option><option>EIE</option><option>Bio</option><option>Chem</option><option>Mech</option>
+              <option>ECE</option><option>EEE</option><option>EIE</option><option>Mech</option>
             </select>
           </div>
-          <div class="form-group" style="margin:0;">
-            <label class="form-label">Batch</label>
-            <select id="fBatch" class="form-control">
-              <option value="">All Batches</option>
+          <div class="form-group" style="margin:0;"><label class="form-label">Batch</label>
+            <select id="fBatch" class="form-control"><option value="">All Batches</option>
               <option>2022-26</option><option>2023-27</option><option>2024-28</option>
             </select>
           </div>
-          <div class="form-group" style="margin:0;">
-            <label class="form-label">Program Type</label>
-            <select id="fProgType" class="form-control">
-              <option value="">All Types</option>
-              <option>Training</option><option>Internship</option><option>Certification</option><option>Workshop</option>
+          <div class="form-group" style="margin:0;"><label class="form-label">Program</label>
+            <select id="fProg" class="form-control"><option value="">All Programs</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label class="form-label">Status</label>
+            <select id="fStatus" class="form-control"><option value="">All Status</option>
+              <option>Doing</option><option>Completed</option>
             </select>
           </div>
-          <div class="form-group" style="margin:0;">
-            <label class="form-label">Program</label>
-            <select id="fProg" class="form-control">
-              <option value="">All Programs</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin:0;">
-            <label class="form-label">Completion Status</label>
-            <select id="fStatus" class="form-control">
-              <option value="">All Status</option>
-              <option>Just onboarded, yet to start</option>
-              <option>Doing</option>
-              <option>Completed</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin:0;">
-            <label class="form-label">Verification</label>
-            <select id="fVerify" class="form-control">
-              <option value="">Any</option>
-              <option>Submitted</option>
-              <option>Under Review</option>
-              <option>Verified</option>
-              <option>Rejected</option>
-              <option>Need Re-upload</option>
-            </select>
+          <div class="form-group" style="margin:0;"><label class="form-label">Search Name</label>
+            <input id="fSearch" class="form-control" placeholder="Student name..."/>
           </div>
         </div>
-        <div style="margin-top:16px;">
+        <div style="display:flex;gap:12px;margin-top:16px;">
           <button class="btn btn-primary" onclick="runFilter()">🔍 Search</button>
+          <button class="btn btn-outline" onclick="exportResults()">📊 Export Excel</button>
         </div>
       </div>
 
-      <!-- RESULTS -->
       <div class="card anim anim-2">
         <div class="card-header"><div class="card-title">Results (<span id="rCount">—</span>)</div></div>
         <div class="table-wrap">
           <table class="data-table">
-            <thead><tr><th>Student</th><th>Reg No</th><th>Dept</th><th>Batch</th><th>Program</th><th>Type</th><th>Status</th><th>Verification</th><th>Reg ID</th><th>Enrolled</th></tr></thead>
-            <tbody id="resultTable"></tbody>
+            <thead><tr><th>Student</th><th>Dept</th><th>Batch</th><th>Program</th><th>Type</th><th>Status</th><th>Reg ID</th><th>Enrolled</th></tr></thead>
+            <tbody id="resultTable"><tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3);">Use filters above to search.</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -88,55 +61,65 @@
   <script src="shared.js"></script>
   <script>
     const admin = requireAdmin();
+    let allResults = [];
+
     if (admin) {
       document.getElementById('navAdmin').textContent = admin.name;
       document.getElementById('sidebarLinks').innerHTML = buildAdminNav('admin-search.html');
-      const programs = DB.getArr('programs');
-      const sel = document.getElementById('fProg');
-      programs.forEach(p => { sel.innerHTML += `<option value="${p.name}">${p.name}</option>`; });
+      loadProgramOptions();
       runFilter();
     }
 
-    function runFilter() {
-      const dept = document.getElementById('fDept').value;
-      const batch = document.getElementById('fBatch').value;
-      const progType = document.getElementById('fProgType').value;
-      const prog = document.getElementById('fProg').value;
-      const status = document.getElementById('fStatus').value;
-      const verify = document.getElementById('fVerify').value;
+    async function loadProgramOptions() {
+      try {
+        const programs = await apiCall('GET', '/programs');
+        const sel = document.getElementById('fProg');
+        programs.forEach(p => sel.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+      } catch (e) {}
+    }
 
-      let parts = DB.getArr('participation').filter(p =>
-        (!dept || p.dept===dept) &&
-        (!batch || p.year===batch) &&
-        (!progType || p.programType===progType) &&
-        (!prog || p.program===prog) &&
-        (!status || p.status===status) &&
-        (!verify || p.verification===verify)
-      );
+    async function runFilter() {
+      try {
+        const params = new URLSearchParams();
+        const dept = document.getElementById('fDept').value;
+        const batch = document.getElementById('fBatch').value;
+        const prog = document.getElementById('fProg').value;
+        const status = document.getElementById('fStatus').value;
+        const search = document.getElementById('fSearch').value.toLowerCase();
+        if (dept) params.set('dept', dept);
+        if (batch) params.set('year', batch);
+        if (prog) params.set('program', prog);
+        if (status) params.set('status', status);
 
-      document.getElementById('rCount').textContent = parts.length;
-      const tbody = document.getElementById('resultTable');
-      if (parts.length===0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text3);">No results found.</td></tr>';
-        return;
+        allResults = await apiCall('GET', `/admin/report?${params.toString()}`);
+        let filtered = allResults;
+        if (search) filtered = filtered.filter(r => r['Student Name']?.toLowerCase().includes(search));
+
+        document.getElementById('rCount').textContent = filtered.length;
+        const tbody = document.getElementById('resultTable');
+        if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3);">No results found.</td></tr>'; return; }
+        tbody.innerHTML = filtered.map(p => `<tr>
+          <td class="td-name">${p['Student Name']}</td>
+          <td><span class="badge badge-training">${p.Department || '—'}</span></td>
+          <td class="td-mono">${p.Batch || '—'}</td>
+          <td style="font-size:12px;max-width:180px;">${p['Program Name'] || '—'}</td>
+          <td>${typeBadge(p['Program Type'])}</td>
+          <td>${badgeHTML(p.Status)}</td>
+          <td class="td-mono">${p['Reg ID'] || '—'}</td>
+          <td class="td-mono">${formatDate(p['Enroll Date'])}</td>
+        </tr>`).join('');
+      } catch (e) {
+        document.getElementById('resultTable').innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3);">${e.message}</td></tr>`;
       }
-      tbody.innerHTML = parts.map(p => `<tr>
-        <td class="td-name">${p.name}</td>
-        <td class="td-mono">${p.studentEmail?.split('@')[0]||'—'}</td>
-        <td><span class="badge badge-training">${p.dept}</span></td>
-        <td class="td-mono">${p.year}</td>
-        <td style="font-size:12px;max-width:180px;">${p.program}</td>
-        <td>${typeBadge(p.programType)}</td>
-        <td>${badgeHTML(p.status)}</td>
-        <td>${badgeHTML(p.verification)}</td>
-        <td class="td-mono">${p.regId}</td>
-        <td class="td-mono">${formatDate(p.enrollDate)}</td>
-      </tr>`).join('');
     }
 
     function clearFilters() {
-      ['fDept','fBatch','fProgType','fProg','fStatus','fVerify'].forEach(id => document.getElementById(id).value='');
+      ['fDept', 'fBatch', 'fProg', 'fStatus', 'fSearch'].forEach(id => document.getElementById(id).value = '');
       runFilter();
+    }
+
+    function exportResults() {
+      exportToExcel(allResults, 'Search_Results');
     }
   </script>
 </body>

@@ -1,5 +1,7 @@
 node_modules/
 .env
 serviceAccountKey.json
+*firebase-adminsdk*.json
 uploads/
 *.log
+server.log

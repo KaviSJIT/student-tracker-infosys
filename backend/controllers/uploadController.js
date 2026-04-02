@@ -47,8 +47,8 @@ exports.submitDocument = async (req, res) => {
 exports.getMyDocuments = async (req, res) => {
   try {
     const { uid } = req.user;
-    const snapshot = await db.collection('documents').where('studentUid', '==', uid).orderBy('submittedAt', 'desc').get();
-    const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snapshot = await db.collection('documents').where('studentUid', '==', uid).get();
+    const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
     res.status(200).json(docs);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -59,10 +59,10 @@ exports.getMyDocuments = async (req, res) => {
 exports.getAllDocuments = async (req, res) => {
   try {
     const { status } = req.query;
-    let query = db.collection('documents').orderBy('submittedAt', 'desc');
-    if (status) query = db.collection('documents').where('status', '==', status).orderBy('submittedAt', 'desc');
+    let query = db.collection('documents');
+    if (status) query = query.where('status', '==', status);
     const snapshot = await query.get();
-    const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
     res.status(200).json(docs);
   } catch (error) {
     res.status(500).json({ message: error.message });

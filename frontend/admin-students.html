@@ -13,7 +13,7 @@
   <div class="app-layout">
     <aside class="sidebar"><div class="sidebar-section"><div class="sidebar-label">Admin Menu</div><div id="sidebarLinks"></div></div></aside>
     <main class="main-content">
-      <div class="page-header anim"><div class="breadcrumb">Admin / <span>Students</span></div><h1>All Students</h1><p>View all approved registered students.</p></div>
+      <div class="page-header anim"><div class="breadcrumb">Admin / <span>Students</span></div><h1>All Students</h1><p>View and filter all approved registered students.</p></div>
 
       <div class="card anim anim-1 mb-4">
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
@@ -36,6 +36,7 @@
               <option>2022-26</option><option>2023-27</option><option>2024-28</option>
             </select>
           </div>
+          <button class="btn btn-outline" onclick="exportStudents()">📊 Export Excel</button>
         </div>
       </div>
 
@@ -53,7 +54,6 @@
       </div>
     </main>
   </div>
-
   <script src="shared.js"></script>
   <script>
     const admin = requireAdmin();
@@ -69,8 +69,8 @@
       try {
         allStudents = await apiCall('GET', '/admin/students');
         filterTable();
-      } catch (err) {
-        document.getElementById('studentsTable').innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3);">${err.message}</td></tr>`;
+      } catch (e) {
+        document.getElementById('studentsTable').innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3);">${e.message}</td></tr>`;
       }
     }
 
@@ -78,19 +78,14 @@
       const search = document.getElementById('fSearch').value.toLowerCase();
       const dept = document.getElementById('fDept').value;
       const batch = document.getElementById('fBatch').value;
-
       const filtered = allStudents.filter(u =>
         (!search || u.name?.toLowerCase().includes(search) || u.registerNumber?.includes(search)) &&
         (!dept || u.department === dept) &&
         (!batch || u.year === batch)
       );
-
       document.getElementById('count').textContent = filtered.length;
       const tbody = document.getElementById('studentsTable');
-      if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3);">No students found</td></tr>';
-        return;
-      }
+      if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3);">No students found</td></tr>'; return; }
       tbody.innerHTML = filtered.map(u => `
         <tr>
           <td class="td-name">${u.name}</td>
@@ -101,6 +96,22 @@
           <td class="td-mono">${u.phone || '—'}</td>
           <td style="font-size:12px;">${u.college || '—'}</td>
         </tr>`).join('');
+    }
+
+    function exportStudents() {
+      const search = document.getElementById('fSearch').value.toLowerCase();
+      const dept = document.getElementById('fDept').value;
+      const batch = document.getElementById('fBatch').value;
+      const filtered = allStudents.filter(u =>
+        (!search || u.name?.toLowerCase().includes(search) || u.registerNumber?.includes(search)) &&
+        (!dept || u.department === dept) &&
+        (!batch || u.year === batch)
+      );
+      exportToExcel(filtered.map(u => ({
+        Name: u.name, 'Register No': u.registerNumber || '', Department: u.department || '',
+        Batch: u.year || '', Email: u.email, Phone: u.phone || '', College: u.college || '',
+        CGPA: u.cgpa || '', Domain: u.domain || '', Plan: u.plan || '',
+      })), 'Students_Report');
     }
   </script>
 </body>

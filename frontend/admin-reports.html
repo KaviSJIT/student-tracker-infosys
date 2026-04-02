@@ -8,102 +8,60 @@
 <body>
   <nav class="navbar">
     <a href="index.html" class="nav-brand" style="text-decoration:none;"><div class="brand-hex">⬡</div><div><div class="brand-name">CompanyConnect</div><div class="brand-sub">Admin Panel</div></div></a>
-    <div class="nav-links"><span id="navAdmin" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="admin-login.html" onclick="DB.set('currentAdmin',null)" class="btn-nav">Logout</a></div>
+    <div class="nav-links"><span id="navAdmin" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="admin-login.html" onclick="doLogout('admin-login.html')" class="btn-nav">Logout</a></div>
   </nav>
   <div class="app-layout">
     <aside class="sidebar"><div class="sidebar-section"><div class="sidebar-label">Admin Menu</div><div id="sidebarLinks"></div></div></aside>
     <main class="main-content">
-      <div class="page-header anim"><div class="breadcrumb">Admin / <span>Reports</span></div><h1>Generate Reports</h1><p>Export department-wise, student-wise, and program reports in PDF or Excel format.</p></div>
+      <div class="page-header anim"><div class="breadcrumb">Admin / <span>Reports</span></div><h1>Generate Reports</h1><p>Export participation and document reports as Excel or PDF.</p></div>
 
-      <div class="grid-sidebar anim anim-1">
-        <!-- GENERATE -->
-        <div>
-          <div class="card mb-4">
-            <div class="card-header"><div class="card-title">Report Configuration</div><div class="card-tag">EXPORT</div></div>
-            <div class="form-group">
-              <label class="form-label">Report Type <span class="req">*</span></label>
-              <select id="reportType" class="form-control" onchange="previewReport()">
-                <option value="student">Student-wise Report</option>
-                <option value="department">Department-wise Report</option>
-                <option value="program">Program Completion Report</option>
-                <option value="certificate">Verified Certificate Report</option>
-              </select>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <div class="form-group">
-                <label class="form-label">Department</label>
-                <select id="fDept" class="form-control" onchange="previewReport()">
-                  <option value="">All</option>
-                  <option>CSE</option><option>IT</option><option>AML</option><option>ADS</option>
-                  <option>ECE</option><option>EEE</option><option>Mech</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Batch</label>
-                <select id="fBatch" class="form-control" onchange="previewReport()">
-                  <option value="">All</option>
-                  <option>2022-26</option><option>2023-27</option><option>2024-28</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Program</label>
-                <select id="fProg" class="form-control" onchange="previewReport()">
-                  <option value="">All Programs</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Status</label>
-                <select id="fStatus" class="form-control" onchange="previewReport()">
-                  <option value="">All</option>
-                  <option>Completed</option><option>Doing</option><option>Just onboarded, yet to start</option>
-                </select>
-              </div>
-            </div>
-            <div style="display:flex;gap:12px;margin-top:8px;">
-              <button class="btn btn-primary btn-lg" onclick="exportExcel()">📊 Export Excel</button>
-              <button class="btn btn-outline btn-lg" onclick="exportPDF()">📄 Export PDF</button>
-            </div>
+      <div class="card anim anim-1 mb-4">
+        <div class="card-header"><div class="card-title">Report Filters</div><div class="card-tag">EXPORT</div></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Report Type</label>
+            <select id="rType" class="form-control">
+              <option value="">Participation Report</option>
+              <option value="documents">Documents Report</option>
+            </select>
           </div>
-
-          <!-- PREVIEW TABLE -->
-          <div class="card">
-            <div class="card-header"><div class="card-title">Preview (<span id="rowCount">0</span> rows)</div><div class="card-tag">PREVIEW</div></div>
-            <div class="table-wrap" id="previewWrap">
-              <p class="text-muted">Select report type to preview data.</p>
-            </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Department</label>
+            <select id="fDept" class="form-control">
+              <option value="">All</option>
+              <option>CSE</option><option>IT</option><option>AML</option><option>ADS</option>
+              <option>ECE</option><option>EEE</option><option>EIE</option><option>Mech</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Batch</label>
+            <select id="fBatch" class="form-control">
+              <option value="">All</option>
+              <option>2022-26</option><option>2023-27</option><option>2024-28</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Program</label>
+            <select id="fProg" class="form-control"><option value="">All Programs</option></select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Status</label>
+            <select id="fStatus" class="form-control">
+              <option value="">All</option>
+              <option>Doing</option><option>Completed</option>
+            </select>
           </div>
         </div>
-
-        <!-- QUICK REPORT CARDS -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <div class="card">
-            <div class="card-header"><div class="card-title">Quick Reports</div></div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
-              <div style="padding:14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;" onclick="quickReport('student')">
-                <div style="font-weight:700;">👤 Student-wise Report</div>
-                <div class="text-muted">All students with program details</div>
-              </div>
-              <div style="padding:14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;" onclick="quickReport('department')">
-                <div style="font-weight:700;">🏫 Department-wise Report</div>
-                <div class="text-muted">Enrollment & completion by dept</div>
-              </div>
-              <div style="padding:14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;" onclick="quickReport('program')">
-                <div style="font-weight:700;">📚 Program Completion Report</div>
-                <div class="text-muted">All program-wise completion stats</div>
-              </div>
-              <div style="padding:14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;" onclick="quickReport('certificate')">
-                <div style="font-weight:700;">🏅 Verified Certificate Report</div>
-                <div class="text-muted">Admin-verified proofs only</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- CERT STATS -->
-          <div class="card">
-            <div class="card-header"><div class="card-title">Certificate Stats</div></div>
-            <div id="certStats"></div>
-          </div>
+        <div style="display:flex;gap:12px;margin-top:16px;">
+          <button class="btn btn-primary btn-lg" onclick="loadPreview()">🔍 Preview</button>
+          <button class="btn btn-outline btn-lg" onclick="doExcelExport()">📊 Export Excel</button>
+          <button class="btn btn-outline btn-lg" onclick="doPDFExport()">📄 Export PDF</button>
         </div>
+      </div>
+
+      <div class="card anim anim-2">
+        <div class="card-header"><div class="card-title">Preview (<span id="rowCount">0</span> rows)</div></div>
+        <div class="table-wrap" id="previewWrap"><p class="text-muted">Click Preview to load data.</p></div>
       </div>
     </main>
   </div>
@@ -115,126 +73,71 @@
     if (admin) {
       document.getElementById('navAdmin').textContent = admin.name;
       document.getElementById('sidebarLinks').innerHTML = buildAdminNav('admin-reports.html');
-      const progs = DB.getArr('programs');
-      const sel = document.getElementById('fProg');
-      progs.forEach(p => sel.innerHTML += `<option value="${p.name}">${p.name}</option>`);
-      previewReport();
-      renderCertStats();
+      loadProgramOptions();
     }
 
-    function getFilteredData() {
-      const type = document.getElementById('reportType').value;
+    async function loadProgramOptions() {
+      try {
+        const programs = await apiCall('GET', '/programs');
+        const sel = document.getElementById('fProg');
+        programs.forEach(p => sel.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+      } catch (e) {}
+    }
+
+    function buildQuery() {
+      const params = new URLSearchParams();
+      const type = document.getElementById('rType').value;
       const dept = document.getElementById('fDept').value;
       const batch = document.getElementById('fBatch').value;
       const prog = document.getElementById('fProg').value;
       const status = document.getElementById('fStatus').value;
-      const parts = DB.getArr('participation');
-      const users = DB.getArr('users');
-      const proofs = DB.getArr('proofs');
-
-      if (type === 'student') {
-        return parts.filter(p =>
-          (!dept||p.dept===dept) && (!batch||p.year===batch) && (!prog||p.program===prog) && (!status||p.status===status)
-        ).map(p => {
-          const proof = proofs.find(pr=>pr.program===p.program&&pr.studentEmail===p.studentEmail);
-          return { Name:p.name, 'Reg No': users.find(u=>u.email===p.studentEmail)?.reg||'—', Department:p.dept, Batch:p.year, Program:p.program, Type:p.programType, 'Springboard Reg ID':p.regId, 'Enroll Date':formatDate(p.enrollDate), Status:p.status, Verification:p.verification, 'Proof Status': proof?.status||'Not Uploaded', Remarks:p.remarks||'' };
-        });
-      }
-      if (type === 'department') {
-        const depts = ['CSE','IT','AML','ADS','ECE','EEE','EIE','Mech'];
-        return depts.map(d => {
-          const dp = parts.filter(p=>p.dept===d&&(!batch||p.year===batch));
-          const certs = proofs.filter(p=>p.dept===d&&p.status==='Verified');
-          return { Department:d, 'Total Enrolled':dp.length, 'Completed':dp.filter(p=>p.status==='Completed').length, 'Doing':dp.filter(p=>p.status==='Doing').length, 'Verified Certs':certs.length, 'Completion %': dp.length?Math.round(dp.filter(p=>p.status==='Completed').length/dp.length*100)+'%':'—' };
-        }).filter(r=>parseInt(r['Total Enrolled'])>0);
-      }
-      if (type === 'program') {
-        const programs = DB.getArr('programs');
-        return programs.map(pr => {
-          const dp = parts.filter(p=>p.program===pr.name&&(!dept||p.dept===dept));
-          return { 'Program ID':pr.id, 'Program Name':pr.name, Type:pr.type, 'Total Enrolled':dp.length, Completed:dp.filter(p=>p.status==='Completed').length, Doing:dp.filter(p=>p.status==='Doing').length, 'Completion %':dp.length?Math.round(dp.filter(p=>p.status==='Completed').length/dp.length*100)+'%':'—', Duration:pr.duration };
-        });
-      }
-      if (type === 'certificate') {
-        return proofs.filter(p=>p.status==='Verified'&&(!dept||p.dept===dept)).map(p => ({
-          Name:p.name, Department:p.dept, Program:p.program, 'Proof Type':p.proofType, 'File Name':p.fileName, 'Upload Date':formatDate(p.uploadedDate), Status:p.status
-        }));
-      }
-      return [];
+      if (type) params.set('type', type);
+      if (dept) params.set('dept', dept);
+      if (batch) params.set('year', batch);
+      if (prog) params.set('program', prog);
+      if (status) params.set('status', status);
+      return params.toString();
     }
 
-    function previewReport() {
-      currentData = getFilteredData();
-      document.getElementById('rowCount').textContent = currentData.length;
-      if (currentData.length === 0) {
-        document.getElementById('previewWrap').innerHTML = '<p class="text-muted">No data matches filters.</p>';
-        return;
+    async function loadPreview() {
+      try {
+        currentData = await apiCall('GET', `/admin/report?${buildQuery()}`);
+        document.getElementById('rowCount').textContent = currentData.length;
+        if (!currentData.length) { document.getElementById('previewWrap').innerHTML = '<p class="text-muted">No data found.</p>'; return; }
+        const keys = Object.keys(currentData[0]);
+        document.getElementById('previewWrap').innerHTML = `
+          <table class="data-table">
+            <thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead>
+            <tbody>${currentData.slice(0, 15).map(row => `<tr>${keys.map(k => `<td style="font-size:12px;">${row[k] ?? '—'}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+          ${currentData.length > 15 ? `<p class="text-muted" style="margin-top:10px;font-size:11px;">Showing 15 of ${currentData.length} rows. Export for full data.</p>` : ''}`;
+      } catch (e) {
+        document.getElementById('previewWrap').innerHTML = `<p class="text-muted">${e.message}</p>`;
       }
+    }
+
+    async function doExcelExport() {
+      if (!currentData.length) await loadPreview();
+      exportToExcel(currentData, document.getElementById('rType').value === 'documents' ? 'Documents_Report' : 'Participation_Report');
+    }
+
+    async function doPDFExport() {
+      if (!currentData.length) await loadPreview();
+      if (!currentData.length) return alert('No data to export.');
       const keys = Object.keys(currentData[0]);
-      document.getElementById('previewWrap').innerHTML = `
-        <table class="data-table">
-          <thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead>
-          <tbody>${currentData.slice(0,10).map(row=>`<tr>${keys.map(k=>`<td style="font-size:12px;">${row[k]}</td>`).join('')}</tr>`).join('')}</tbody>
-        </table>
-        ${currentData.length>10?`<p class="text-muted" style="margin-top:10px;font-family:var(--font-mono);font-size:11px;">Showing 10 of ${currentData.length} rows. Export for full data.</p>`:''}`;
-    }
-
-    function quickReport(type) {
-      document.getElementById('reportType').value = type;
-      document.getElementById('fDept').value = '';
-      document.getElementById('fBatch').value = '';
-      document.getElementById('fStatus').value = '';
-      previewReport();
-    }
-
-    function exportExcel() {
-      const data = getFilteredData();
-      if (!data.length) return alert('No data to export.');
-      const reportName = document.getElementById('reportType').options[document.getElementById('reportType').selectedIndex].text;
-      const keys = Object.keys(data[0]);
-      let csv = keys.join('\t') + '\n';
-      data.forEach(row => { csv += keys.map(k => `"${row[k]}"`).join('\t') + '\n'; });
-      const blob = new Blob([csv], { type: 'application/vnd.ms-excel' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `CompanyConnect_${reportName.replace(/ /g,'_')}_${new Date().toISOString().split('T')[0]}.xls`;
-      link.click();
-    }
-
-    function exportPDF() {
-      const data = getFilteredData();
-      if (!data.length) return alert('No data to export.');
-      const reportName = document.getElementById('reportType').options[document.getElementById('reportType').selectedIndex].text;
-      const keys = Object.keys(data[0]);
+      const title = document.getElementById('rType').value === 'documents' ? 'Documents Report' : 'Participation Report';
       const win = window.open('', '_blank');
-      win.document.write(`
-        <html><head><title>${reportName}</title>
-        <style>body{font-family:Arial;padding:20px;} h1{color:#3b28cc;} table{width:100%;border-collapse:collapse;margin-top:20px;} th{background:#3b28cc;color:#fff;padding:8px 10px;text-align:left;font-size:12px;} td{padding:8px 10px;border-bottom:1px solid #e2e6f0;font-size:12px;} tr:hover{background:#f7f8fc;} .footer{margin-top:30px;font-size:11px;color:#94a3b8;}</style>
+      win.document.write(`<html><head><title>${title}</title>
+        <style>body{font-family:Arial;padding:20px;}h1{color:#3b28cc;}table{width:100%;border-collapse:collapse;margin-top:20px;}th{background:#3b28cc;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}td{padding:7px 10px;border-bottom:1px solid #e2e6f0;font-size:11px;}tr:hover{background:#f7f8fc;}.footer{margin-top:30px;font-size:10px;color:#94a3b8;}</style>
         </head><body>
-        <h1>CompanyConnect – ${reportName}</h1>
-        <p style="color:#64748b;font-size:13px;">St. Joseph's College of Engineering | Generated: ${new Date().toLocaleString('en-IN')}</p>
-        <table><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead>
-        <tbody>${data.map(row=>`<tr>${keys.map(k=>`<td>${row[k]}</td>`).join('')}</tr>`).join('')}</tbody></table>
-        <div class="footer">Total Records: ${data.length} | CompanyConnect – Infosys Springboard Tracker</div>
+        <h1>CompanyConnect – ${title}</h1>
+        <p style="color:#64748b;font-size:12px;">Generated: ${new Date().toLocaleString('en-IN')}</p>
+        <table><thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead>
+        <tbody>${currentData.map(row => `<tr>${keys.map(k => `<td>${row[k] ?? '—'}</td>`).join('')}</tr>`).join('')}</tbody></table>
+        <div class="footer">Total: ${currentData.length} records | CompanyConnect</div>
         </body></html>`);
       win.document.close();
-      setTimeout(() => { win.print(); }, 500);
-    }
-
-    function renderCertStats() {
-      const proofs = DB.getArr('proofs');
-      const el = document.getElementById('certStats');
-      const stats = [
-        ['Verified', proofs.filter(p=>p.status==='Verified').length, 'var(--success)'],
-        ['Under Review', proofs.filter(p=>p.status==='Under Review').length, 'var(--warning)'],
-        ['Rejected', proofs.filter(p=>p.status==='Rejected').length, 'var(--danger)'],
-        ['Need Re-upload', proofs.filter(p=>p.status==='Need Re-upload').length, 'var(--info)'],
-      ];
-      el.innerHTML = stats.map(([label,val,color]) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
-          <span style="font-size:13px;">${label}</span>
-          <span style="font-family:var(--font-head);font-size:20px;font-weight:800;color:${color};">${val}</span>
-        </div>`).join('');
+      setTimeout(() => win.print(), 500);
     }
   </script>
 </body>

@@ -48,6 +48,7 @@
         const stats = await apiCall('GET', '/admin/dashboard');
         document.getElementById('statsRow').innerHTML = `
           <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Total Students</div><div class="stat-value">${stats.totalStudents}</div><div class="stat-delta">Approved</div></div>
+          <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-label">Pending Approvals</div><div class="stat-value">${stats.pendingApprovals}</div><div class="stat-delta"><a href="admin-pending.html">Review →</a></div></div>
           <div class="stat-card"><div class="stat-icon">📘</div><div class="stat-label">Enrolled</div><div class="stat-value">${stats.enrolled}</div><div class="stat-delta">Across all programs</div></div>
           <div class="stat-card"><div class="stat-icon">🏅</div><div class="stat-label">Completed</div><div class="stat-value">${stats.completed}</div><div class="stat-delta">Programs finished</div></div>
           <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-label">Verified Docs</div><div class="stat-value">${stats.verifiedDocs}</div><div class="stat-delta">Admin verified</div></div>`;

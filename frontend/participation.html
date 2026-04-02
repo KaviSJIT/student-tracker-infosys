@@ -8,7 +8,7 @@
 <body>
   <nav class="navbar">
     <a href="index.html" class="nav-brand" style="text-decoration:none;"><div class="brand-hex">⬡</div><div><div class="brand-name">CompanyConnect</div><div class="brand-sub">Infosys Springboard Tracker</div></div></a>
-    <div class="nav-links"><span id="navUser" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="login.html" onclick="DB.set('currentUser',null)" class="btn-nav">Logout</a></div>
+    <div class="nav-links"><span id="navUser" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="login.html" onclick="doLogout()" class="btn-nav">Logout</a></div>
   </nav>
   <div class="app-layout">
     <aside class="sidebar"><div class="sidebar-section"><div class="sidebar-label">Student Menu</div><div id="sidebarLinks"></div></div></aside>
@@ -18,8 +18,6 @@
       <div class="grid-sidebar anim anim-1">
         <div class="card">
           <div class="card-header"><div class="card-title">Participation Details</div><div class="card-tag">FORM</div></div>
-
-          <!-- Student Info (readonly) -->
           <div class="form-row">
             <div class="form-group"><label class="form-label">Student Name</label><input id="fName" class="form-control" disabled/></div>
             <div class="form-group"><label class="form-label">Register Number</label><input id="fReg" class="form-control" disabled/></div>
@@ -28,45 +26,28 @@
             <div class="form-group"><label class="form-label">Department</label><input id="fDept" class="form-control" disabled/></div>
             <div class="form-group"><label class="form-label">Batch</label><input id="fYear" class="form-control" disabled/></div>
           </div>
-
           <hr style="margin:20px 0;border-color:var(--border);">
-
-          <!-- Program -->
           <div class="form-group"><label class="form-label">Select Program <span class="req">*</span></label>
-            <select id="fProgram" class="form-control"></select>
+            <select id="fProgram" class="form-control"><option value="">Loading programs...</option></select>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Infosys Springboard Registration ID <span class="req">*</span></label><input id="fRegId" class="form-control" placeholder="INF2026CSE041"/></div>
+            <div class="form-group"><label class="form-label">Springboard Registration ID <span class="req">*</span></label><input id="fRegId" class="form-control" placeholder="INF2026CSE041"/></div>
             <div class="form-group"><label class="form-label">Date of Enrollment <span class="req">*</span></label><input type="date" id="fEnrollDate" class="form-control"/></div>
           </div>
           <div class="form-group"><label class="form-label">Current Status <span class="req">*</span></label>
             <select id="fStatus" class="form-control">
-              <option>Just onboarded, yet to start</option>
-              <option>Doing</option>
-              <option>Completed</option>
+              <option>Doing</option><option>Completed</option>
             </select>
           </div>
-
-          <div id="internshipExtra" style="display:none;">
-            <hr style="margin:20px 0;border-color:var(--border);">
-            <div class="card-header" style="margin-bottom:16px;"><div class="card-title">Internship Details</div></div>
-            <div class="form-row">
-              <div class="form-group"><label class="form-label">Start Date</label><input type="date" id="fStartDate" class="form-control"/></div>
-              <div class="form-group"><label class="form-label">End Date</label><input type="date" id="fEndDate" class="form-control"/></div>
-            </div>
-            <div class="form-group"><label class="form-label">Project Title</label><input id="fProject" class="form-control" placeholder="e.g. Student Placement Portal"/></div>
-            <div class="form-group"><label class="form-label">Brief Feedback on Experience</label><textarea id="fFeedback" class="form-control" placeholder="Please describe your experience gained (not a single word answer)..."></textarea></div>
-            <div class="form-group"><label class="form-label">Certificate Link (if completed)</label><input id="fCertLink" class="form-control" placeholder="https://springboard.infosys.com/cert/..."/></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Start Date</label><input type="date" id="fStartDate" class="form-control"/></div>
+            <div class="form-group"><label class="form-label">End Date</label><input type="date" id="fEndDate" class="form-control"/></div>
           </div>
-
-          <div class="form-group"><label class="form-label">Remarks</label><textarea id="fRemarks" class="form-control" placeholder="Any additional notes..."></textarea></div>
-
-          <div class="mt-4">
-            <button class="btn btn-primary btn-lg" onclick="submitParticipation()">📝 Submit Participation</button>
-          </div>
+          <div class="form-group"><label class="form-label">Project Title</label><input id="fProject" class="form-control" placeholder="e.g. Student Placement Portal"/></div>
+          <div class="form-group"><label class="form-label">Feedback</label><textarea id="fFeedback" class="form-control" rows="3" placeholder="Describe your experience..."></textarea></div>
+          <div class="form-group"><label class="form-label">Certificate Link</label><input id="fCertLink" class="form-control" placeholder="https://springboard.infosys.com/cert/..."/></div>
+          <button class="btn btn-primary btn-lg" id="submitBtn" onclick="submitParticipation()">📝 Submit Participation</button>
         </div>
-
-        <!-- MY SUBMISSIONS PANEL -->
         <div class="card">
           <div class="card-header"><div class="card-title">My Submissions</div></div>
           <div id="mySubsList"><p class="text-muted">Loading...</p></div>
@@ -80,84 +61,70 @@
     if (user) {
       document.getElementById('navUser').textContent = user.name;
       document.getElementById('sidebarLinks').innerHTML = buildStudentNav('participation.html');
-      document.getElementById('fName').value = user.name;
-      document.getElementById('fReg').value = user.reg||'';
-      document.getElementById('fDept').value = user.dept||'';
-      document.getElementById('fYear').value = user.year||'';
+      document.getElementById('fName').value = user.name || '';
+      document.getElementById('fReg').value = user.registerNumber || '';
+      document.getElementById('fDept').value = user.department || '';
+      document.getElementById('fYear').value = user.year || '';
+      loadPrograms();
+      loadMySubmissions();
+    }
 
-      // Populate programs
-      const programs = DB.getArr('programs');
+    async function loadPrograms() {
+      try {
+        const programs = await apiCall('GET', '/programs');
+        const sel = document.getElementById('fProgram');
+        sel.innerHTML = '<option value="">Select a program</option>' +
+          programs.map(p => `<option value="${p.id}" data-name="${p.name}" data-type="${p.type}">${p.name} (${p.type})</option>`).join('');
+        const urlProg = new URLSearchParams(location.search).get('prog');
+        if (urlProg) sel.value = urlProg;
+      } catch (e) { console.error(e); }
+    }
+
+    async function submitParticipation() {
       const sel = document.getElementById('fProgram');
-      programs.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.name; opt.dataset.type = p.type;
-        opt.textContent = `${p.name} (${p.type})`;
-        sel.appendChild(opt);
-      });
-
-      // Pre-select if coming from programs page
-      const urlProg = new URLSearchParams(location.search).get('prog');
-      if (urlProg) sel.value = urlProg;
-
-      sel.addEventListener('change', checkType);
-      document.getElementById('fStatus').addEventListener('change', checkType);
-      checkType();
-      renderMySubmissions();
-    }
-
-    function checkType() {
-      const prog = document.getElementById('fProgram');
-      const selectedType = prog.options[prog.selectedIndex]?.dataset.type;
-      const status = document.getElementById('fStatus').value;
-      const show = selectedType === 'Internship' || status === 'Completed';
-      document.getElementById('internshipExtra').style.display = show ? '' : 'none';
-    }
-
-    function submitParticipation() {
-      const prog = document.getElementById('fProgram');
+      const programId = sel.value;
+      const programName = sel.options[sel.selectedIndex]?.dataset.name;
+      const programType = sel.options[sel.selectedIndex]?.dataset.type;
       const regId = document.getElementById('fRegId').value.trim();
       const enrollDate = document.getElementById('fEnrollDate').value;
-      const status = document.getElementById('fStatus').value;
-      if (!regId || !enrollDate) return showAlert('alertBox','Please fill all required fields.','error');
+      if (!programId || !regId || !enrollDate) return showAlert('alertBox', 'Please fill all required fields.', 'error');
 
-      const selectedType = prog.options[prog.selectedIndex]?.dataset.type;
-      const parts = DB.getArr('participation');
-      const existing = parts.find(p => p.studentEmail===user.email && p.program===prog.value);
-      if (existing) return showAlert('alertBox','You have already submitted for this program.','warning');
-
-      parts.push({
-        id: genId('SUB'), studentEmail: user.email,
-        name: user.name, dept: user.dept, year: user.year,
-        program: prog.value, programType: selectedType,
-        regId, enrollDate, status,
-        startDate: document.getElementById('fStartDate').value,
-        endDate: document.getElementById('fEndDate').value,
-        project: document.getElementById('fProject').value,
-        feedback: document.getElementById('fFeedback').value,
-        certLink: document.getElementById('fCertLink').value,
-        remarks: document.getElementById('fRemarks').value,
-        verification: 'Submitted',
-        submittedOn: new Date().toISOString().split('T')[0]
-      });
-      DB.set('participation', parts);
-      showAlert('alertBox','Participation submitted successfully! Please upload proof next.','success');
-      renderMySubmissions();
-      setTimeout(() => window.location.href = 'upload.html', 2000);
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true; btn.textContent = 'Submitting...';
+      try {
+        await apiCall('POST', '/student/participation', {
+          programId, programName, programType,
+          regId, enrollDate,
+          status: document.getElementById('fStatus').value,
+          startDate: document.getElementById('fStartDate').value,
+          endDate: document.getElementById('fEndDate').value,
+          project: document.getElementById('fProject').value,
+          feedback: document.getElementById('fFeedback').value,
+          certLink: document.getElementById('fCertLink').value,
+        });
+        showAlert('alertBox', 'Participation submitted! Please upload proof next.', 'success');
+        loadMySubmissions();
+        setTimeout(() => window.location.href = 'upload.html', 2000);
+      } catch (e) {
+        showAlert('alertBox', e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = '📝 Submit Participation';
+      }
     }
 
-    function renderMySubmissions() {
-      const parts = DB.getArr('participation').filter(p => p.studentEmail===user.email);
-      const el = document.getElementById('mySubsList');
-      if (parts.length === 0) { el.innerHTML = '<p class="text-muted">No submissions yet.</p>'; return; }
-      el.innerHTML = parts.map(p => `
-        <div style="padding:14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:10px;">
-          <div style="font-weight:600;font-size:14px;">${p.program}</div>
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-            ${typeBadge(p.programType)} ${badgeHTML(p.status)} ${badgeHTML(p.verification)}
-          </div>
-          <div class="text-mono" style="margin-top:8px;">Reg ID: ${p.regId} · ${formatDate(p.enrollDate)}</div>
-        </div>`).join('');
+    async function loadMySubmissions() {
+      try {
+        const parts = await apiCall('GET', '/student/participation');
+        const el = document.getElementById('mySubsList');
+        if (!parts.length) { el.innerHTML = '<p class="text-muted">No submissions yet.</p>'; return; }
+        el.innerHTML = parts.map(p => `
+          <div style="padding:14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:10px;">
+            <div style="font-weight:600;font-size:14px;">${p.programName}</div>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">${typeBadge(p.programType)} ${badgeHTML(p.status)}</div>
+            <div class="text-mono" style="margin-top:8px;">Reg ID: ${p.regId || '—'} · ${formatDate(p.enrollDate)}</div>
+          </div>`).join('');
+      } catch (e) { document.getElementById('mySubsList').innerHTML = `<p class="text-muted">${e.message}</p>`; }
     }
   </script>
 </body>
-</html> 
+</html>

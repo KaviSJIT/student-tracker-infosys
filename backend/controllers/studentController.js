@@ -69,8 +69,8 @@ exports.submitParticipation = async (req, res) => {
 exports.getMyParticipations = async (req, res) => {
   try {
     const { uid } = req.user;
-    const snapshot = await db.collection('participation').where('studentUid', '==', uid).orderBy('submittedOn', 'desc').get();
-    const parts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snapshot = await db.collection('participation').where('studentUid', '==', uid).get();
+    const parts = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => new Date(b.submittedOn) - new Date(a.submittedOn));
     res.status(200).json(parts);
   } catch (error) {
     res.status(500).json({ message: error.message });

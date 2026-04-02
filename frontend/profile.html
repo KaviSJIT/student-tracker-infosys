@@ -1,117 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Profile – CompanyConnect</title>
   <link rel="stylesheet" href="shared.css"/>
 </head>
 <body>
   <nav class="navbar">
-    <a href="index.html" class="nav-brand" style="text-decoration:none;">
-      <div class="brand-hex">⬡</div>
-      <div><div class="brand-name">CompanyConnect</div><div class="brand-sub">Infosys Springboard Tracker</div></div>
-    </a>
-    <div class="nav-links">
-      <span id="navUser" style="color:rgba(255,255,255,0.7);font-size:13px;"></span>
-      <a href="login.html" onclick="DB.set('currentUser',null)" class="btn-nav">Logout</a>
-    </div>
+    <a href="index.html" class="nav-brand" style="text-decoration:none;"><div class="brand-hex">⬡</div><div><div class="brand-name">CompanyConnect</div><div class="brand-sub">Infosys Springboard Tracker</div></div></a>
+    <div class="nav-links"><span id="navUser" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="login.html" onclick="doLogout()" class="btn-nav">Logout</a></div>
   </nav>
   <div class="app-layout">
     <aside class="sidebar"><div class="sidebar-section"><div class="sidebar-label">Student Menu</div><div id="sidebarLinks"></div></div></aside>
     <main class="main-content">
-      <div class="page-header anim">
-        <div class="breadcrumb">Student / <span>My Profile</span></div>
-        <h1>My Profile</h1>
-        <p>Keep your academic and personal details up to date.</p>
-      </div>
+      <div class="page-header anim"><div class="breadcrumb">Student / <span>My Profile</span></div><h1>My Profile</h1><p>Keep your academic and personal details up to date.</p></div>
       <div id="alertBox"></div>
       <div class="grid-sidebar anim anim-1">
         <div class="card">
           <div class="card-header"><div class="card-title">Personal & Academic Details</div><div class="card-tag">EDITABLE</div></div>
-
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Full Name (CAPS) <span class="req">*</span></label><input id="pName" class="form-control" style="text-transform:uppercase;"/></div>
-            <div class="form-group"><label class="form-label">Register Number <span class="req">*</span></label><input id="pReg" class="form-control"/></div>
+            <div class="form-group"><label class="form-label">Full Name</label><input id="pName" class="form-control" style="text-transform:uppercase;"/></div>
+            <div class="form-group"><label class="form-label">Register Number</label><input id="pReg" class="form-control" disabled/></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">Email</label><input id="pEmail" class="form-control" disabled/></div>
-            <div class="form-group"><label class="form-label">Phone <span class="req">*</span></label><input id="pPhone" class="form-control"/></div>
-          </div>
-          <div class="form-row-3">
-            <div class="form-group"><label class="form-label">Department <span class="req">*</span></label>
-              <select id="pDept" class="form-control">
-                <option>CSE</option><option>IT</option><option>AML</option><option>ADS</option>
-                <option>ECE</option><option>EEE</option><option>EIE</option><option>Bio</option><option>Chem</option><option>Mech</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Batch <span class="req">*</span></label>
-              <select id="pYear" class="form-control"><option>2022-26</option><option>2023-27</option><option>2024-28</option></select>
-            </div>
-            <div class="form-group"><label class="form-label">Section</label><input id="pSection" class="form-control"/></div>
+            <div class="form-group"><label class="form-label">Phone</label><input id="pPhone" class="form-control"/></div>
           </div>
           <div class="form-row">
+            <div class="form-group"><label class="form-label">Department</label>
+              <select id="pDept" class="form-control"><option>CSE</option><option>IT</option><option>AML</option><option>ADS</option><option>ECE</option><option>EEE</option><option>EIE</option><option>Bio</option><option>Chem</option><option>Mech</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">Batch</label>
+              <select id="pYear" class="form-control"><option>2022-26</option><option>2023-27</option><option>2024-28</option></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Section</label><input id="pSection" class="form-control"/></div>
             <div class="form-group"><label class="form-label">Gender</label>
               <select id="pGender" class="form-control"><option>Male</option><option>Female</option></select>
             </div>
-            <div class="form-group"><label class="form-label">College</label>
-              <select id="pCollege" class="form-control">
-                <option>St. Joseph's College of Engineering</option>
-                <option>St. Joseph's Institute of Technology</option>
-              </select>
-            </div>
           </div>
-
+          <div class="form-group"><label class="form-label">College</label>
+            <select id="pCollege" class="form-control"><option>St. Joseph's College of Engineering</option><option>St. Joseph's Institute of Technology</option></select>
+          </div>
           <hr style="margin:20px 0;border-color:var(--border);">
-          <div class="card-header" style="margin-bottom:16px;"><div class="card-title">Academic Info</div></div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">CGPA</label><input id="pCgpa" class="form-control" placeholder="8.04"/></div>
-            <div class="form-group"><label class="form-label">Number of Arrears</label><input id="pArrears" class="form-control" placeholder="0"/></div>
+            <div class="form-group"><label class="form-label">Arrears</label><input id="pArrears" class="form-control" placeholder="0"/></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Courses Completed in Springboard</label><input id="pCourses" class="form-control" placeholder="3"/></div>
-            <div class="form-group"><label class="form-label">Certifications Completed</label><input id="pCerts" class="form-control" placeholder="1"/></div>
+            <div class="form-group"><label class="form-label">Courses Completed</label><input id="pCourses" class="form-control" placeholder="3"/></div>
+            <div class="form-group"><label class="form-label">Certifications</label><input id="pCerts" class="form-control" placeholder="1"/></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Planning for (HOPE/PEP)</label>
+            <div class="form-group"><label class="form-label">Plan (HOPE/PEP)</label>
               <select id="pPlan" class="form-control"><option>HOPE</option><option>PEP</option><option>NA</option></select>
             </div>
             <div class="form-group"><label class="form-label">Interested Domain</label>
-              <select id="pDomain" class="form-control">
-                <option>Full Stack Web Development</option><option>AIML</option>
-                <option>Data Science Analytics</option><option>Cloud/DevOps</option>
-                <option>RPA</option><option>Cybersecurity</option>
-              </select>
+              <select id="pDomain" class="form-control"><option>Full Stack Web Development</option><option>AIML</option><option>Data Science Analytics</option><option>Cloud/DevOps</option><option>RPA</option><option>Cybersecurity</option></select>
             </div>
           </div>
-
-          <hr style="margin:20px 0;border-color:var(--border);">
-          <div class="card-header" style="margin-bottom:16px;"><div class="card-title">Location Info</div></div>
-          <div class="form-row-3">
+          <div class="form-row">
             <div class="form-group"><label class="form-label">Accommodation</label>
               <select id="pAccom" class="form-control"><option>Dayscholar</option><option>Hosteller</option></select>
             </div>
             <div class="form-group"><label class="form-label">Native</label><input id="pNative" class="form-control" placeholder="Chennai"/></div>
-            <div class="form-group"><label class="form-label">Bus Boarding Point</label><input id="pBus" class="form-control" placeholder="Thiruporur / NA"/></div>
           </div>
-
-          <div class="mt-4">
-            <button class="btn btn-primary btn-lg" onclick="saveProfile()">💾 Save Profile</button>
-          </div>
+          <div class="form-group"><label class="form-label">Bus Boarding Point</label><input id="pBus" class="form-control" placeholder="Thiruporur / NA"/></div>
+          <div class="mt-4"><button class="btn btn-primary btn-lg" id="saveBtn" onclick="saveProfile()">💾 Save Profile</button></div>
         </div>
-
-        <!-- SUMMARY CARD -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <div class="card">
-            <div class="card-header"><div class="card-title">Profile Summary</div></div>
-            <div id="summaryBox">
-              <p class="text-muted">Fill in and save your profile to see summary.</p>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title">Springboard Stats</div></div>
-            <div id="springboardStats"></div>
-          </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Profile Summary</div></div>
+          <div id="summaryBox"></div>
         </div>
       </div>
     </main>
@@ -122,43 +82,50 @@
     if (user) {
       document.getElementById('navUser').textContent = user.name;
       document.getElementById('sidebarLinks').innerHTML = buildStudentNav('profile.html');
-
-      // Load fields
-      const fields = {pName:'name',pReg:'reg',pEmail:'email',pPhone:'phone',pDept:'dept',pYear:'year',pSection:'section',pGender:'gender',pCollege:'college',pCgpa:'cgpa',pArrears:'arrears',pCourses:'courses',pCerts:'certs',pPlan:'plan',pDomain:'domain',pAccom:'accommodation',pNative:'native',pBus:'bus'};
-      for (const [id, key] of Object.entries(fields)) {
-        const el = document.getElementById(id);
-        if (el && user[key]) el.value = user[key];
-      }
-      renderSummary(user);
+      fillForm(user);
     }
 
-    function saveProfile() {
-      const users = DB.getArr('users');
-      const idx = users.findIndex(u => u.email === user.email);
-      const updated = { ...user,
-        name: document.getElementById('pName').value.trim().toUpperCase(),
-        reg: document.getElementById('pReg').value.trim(),
-        phone: document.getElementById('pPhone').value.trim(),
-        dept: document.getElementById('pDept').value,
-        year: document.getElementById('pYear').value,
-        section: document.getElementById('pSection').value,
-        gender: document.getElementById('pGender').value,
-        college: document.getElementById('pCollege').value,
-        cgpa: document.getElementById('pCgpa').value,
-        arrears: document.getElementById('pArrears').value,
-        courses: document.getElementById('pCourses').value,
-        certs: document.getElementById('pCerts').value,
-        plan: document.getElementById('pPlan').value,
-        domain: document.getElementById('pDomain').value,
-        accommodation: document.getElementById('pAccom').value,
-        native: document.getElementById('pNative').value,
-        bus: document.getElementById('pBus').value,
-      };
-      if (idx >= 0) users[idx] = updated;
-      DB.set('users', users);
-      DB.set('currentUser', updated);
-      showAlert('alertBox', 'Profile saved successfully!', 'success');
-      renderSummary(updated);
+    function fillForm(u) {
+      const map = { pName: 'name', pEmail: 'email', pPhone: 'phone', pDept: 'department', pYear: 'year', pSection: 'section', pGender: 'gender', pCollege: 'college', pCgpa: 'cgpa', pArrears: 'arrears', pCourses: 'courses', pCerts: 'certs', pPlan: 'plan', pDomain: 'domain', pAccom: 'accommodation', pNative: 'native', pBus: 'bus', pReg: 'registerNumber' };
+      for (const [id, key] of Object.entries(map)) {
+        const el = document.getElementById(id);
+        if (el && u[key]) el.value = u[key];
+      }
+      renderSummary(u);
+    }
+
+    async function saveProfile() {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true; btn.textContent = 'Saving...';
+      try {
+        const updates = {
+          name: document.getElementById('pName').value.trim().toUpperCase(),
+          phone: document.getElementById('pPhone').value.trim(),
+          department: document.getElementById('pDept').value,
+          year: document.getElementById('pYear').value,
+          section: document.getElementById('pSection').value,
+          gender: document.getElementById('pGender').value,
+          college: document.getElementById('pCollege').value,
+          cgpa: document.getElementById('pCgpa').value,
+          arrears: document.getElementById('pArrears').value,
+          courses: document.getElementById('pCourses').value,
+          certs: document.getElementById('pCerts').value,
+          plan: document.getElementById('pPlan').value,
+          domain: document.getElementById('pDomain').value,
+          accommodation: document.getElementById('pAccom').value,
+          native: document.getElementById('pNative').value,
+          bus: document.getElementById('pBus').value,
+        };
+        await apiCall('PUT', '/student/profile', updates);
+        const updated = { ...user, ...updates };
+        Auth.setUser(updated);
+        showAlert('alertBox', 'Profile saved successfully!', 'success');
+        renderSummary(updated);
+      } catch (e) {
+        showAlert('alertBox', e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = '💾 Save Profile';
+      }
     }
 
     function renderSummary(u) {
@@ -166,20 +133,11 @@
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
             <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--primary),var(--accent2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;">👤</div>
-            <div><div style="font-family:var(--font-head);font-weight:700;">${u.name||'—'}</div><div class="text-mono">${u.reg||'—'}</div></div>
+            <div><div style="font-family:var(--font-head);font-weight:700;">${u.name || '—'}</div><div class="text-mono">${u.registerNumber || '—'}</div></div>
           </div>
-          ${row('Department', u.dept)}${row('Batch', u.year)}${row('College', u.college)}${row('CGPA', u.cgpa)}${row('Domain', u.domain)}${row('Plan', u.plan)}
-        </div>`;
-      const parts = DB.getArr('participation').filter(p => p.studentEmail === u.email);
-      const proofs = DB.getArr('proofs').filter(p => p.studentEmail === u.email);
-      document.getElementById('springboardStats').innerHTML = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          ${sbox('Programs', parts.length, '📝')}${sbox('Completed', parts.filter(p=>p.status==='Completed').length, '✅')}
-          ${sbox('Proofs', proofs.length, '📎')}${sbox('Verified', proofs.filter(p=>p.status==='Verified').length, '🏅')}
+          ${[['Department', u.department], ['Batch', u.year], ['College', u.college], ['CGPA', u.cgpa], ['Domain', u.domain], ['Plan', u.plan]].map(([l, v]) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span class="text-muted">${l}</span><span style="font-weight:500;">${v || '—'}</span></div>`).join('')}
         </div>`;
     }
-    function row(label, val) { return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span class="text-muted">${label}</span><span style="font-weight:500;">${val||'—'}</span></div>`; }
-    function sbox(label, val, icon) { return `<div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:20px;">${icon}</div><div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--primary);">${val}</div><div class="text-muted">${label}</div></div>`; }
   </script>
 </body>
 </html>

@@ -8,25 +8,23 @@
 <body>
   <nav class="navbar">
     <a href="index.html" class="nav-brand" style="text-decoration:none;"><div class="brand-hex">⬡</div><div><div class="brand-name">CompanyConnect</div><div class="brand-sub">Admin Panel</div></div></a>
-    <div class="nav-links"><span id="navAdmin" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="admin-login.html" onclick="DB.set('currentAdmin',null)" class="btn-nav">Logout</a></div>
+    <div class="nav-links"><span id="navAdmin" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="admin-login.html" onclick="doLogout('admin-login.html')" class="btn-nav">Logout</a></div>
   </nav>
   <div class="app-layout">
     <aside class="sidebar"><div class="sidebar-section"><div class="sidebar-label">Admin Menu</div><div id="sidebarLinks"></div></div></aside>
     <main class="main-content">
-      <div class="page-header anim"><div class="breadcrumb">Admin / <span>Programs</span></div><h1>Program Management</h1><p>Add, edit, and manage Infosys Springboard programs.</p></div>
+      <div class="page-header anim"><div class="breadcrumb">Admin / <span>Programs</span></div><h1>Program Management</h1><p>Add and manage Infosys Springboard programs.</p></div>
       <div id="alertBox"></div>
       <div class="grid-sidebar anim anim-1">
-        <!-- ADD FORM -->
         <div class="card">
           <div class="card-header"><div class="card-title">Add New Program</div><div class="card-tag">ADMIN</div></div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Program ID <span class="req">*</span></label><input id="pId" class="form-control" placeholder="P5"/></div>
+            <div class="form-group"><label class="form-label">Program Name <span class="req">*</span></label><input id="pName" class="form-control" placeholder="e.g. Infosys Cloud Workshop"/></div>
             <div class="form-group"><label class="form-label">Type <span class="req">*</span></label>
               <select id="pType" class="form-control"><option>Training</option><option>Internship</option><option>Certification</option><option>Workshop</option></select>
             </div>
           </div>
-          <div class="form-group"><label class="form-label">Program Name <span class="req">*</span></label><input id="pName" class="form-control" placeholder="e.g. Infosys Cloud Workshop"/></div>
-          <div class="form-group"><label class="form-label">Description</label><textarea id="pDesc" class="form-control" placeholder="Brief description..."></textarea></div>
+          <div class="form-group"><label class="form-label">Description</label><textarea id="pDesc" class="form-control" rows="3" placeholder="Brief description..."></textarea></div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">Start Date</label><input type="date" id="pStart" class="form-control"/></div>
             <div class="form-group"><label class="form-label">End Date</label><input type="date" id="pEnd" class="form-control"/></div>
@@ -35,13 +33,11 @@
             <div class="form-group"><label class="form-label">Duration</label><input id="pDuration" class="form-control" placeholder="4 Weeks"/></div>
             <div class="form-group"><label class="form-label">Eligibility</label><input id="pEligibility" class="form-control" placeholder="All Students"/></div>
           </div>
-          <button class="btn btn-primary btn-lg" onclick="addProgram()">➕ Add Program</button>
+          <button class="btn btn-primary btn-lg" id="addBtn" onclick="addProgram()">➕ Add Program</button>
         </div>
-
-        <!-- PROGRAMS LIST -->
         <div class="card">
           <div class="card-header"><div class="card-title">Current Programs</div></div>
-          <div id="programsList"></div>
+          <div id="programsList"><p class="text-muted">Loading...</p></div>
         </div>
       </div>
     </main>
@@ -52,55 +48,60 @@
     if (admin) {
       document.getElementById('navAdmin').textContent = admin.name;
       document.getElementById('sidebarLinks').innerHTML = buildAdminNav('admin-programs.html');
-      renderPrograms();
+      loadPrograms();
     }
 
-    function addProgram() {
-      const id = document.getElementById('pId').value.trim();
-      const name = document.getElementById('pName').value.trim();
-      if (!id || !name) return showAlert('alertBox','Program ID and Name are required.','error');
-      const programs = DB.getArr('programs');
-      if (programs.find(p=>p.id===id)) return showAlert('alertBox','Program ID already exists.','error');
-      programs.push({
-        id, name, type: document.getElementById('pType').value,
-        desc: document.getElementById('pDesc').value,
-        start: document.getElementById('pStart').value,
-        end: document.getElementById('pEnd').value,
-        duration: document.getElementById('pDuration').value || '—',
-        eligibility: document.getElementById('pEligibility').value || 'All Students'
-      });
-      DB.set('programs', programs);
-      showAlert('alertBox','Program added successfully!','success');
-      ['pId','pName','pDesc','pStart','pEnd','pDuration','pEligibility'].forEach(id => document.getElementById(id).value='');
-      renderPrograms();
-    }
-
-    function deleteProgram(id) {
-      if (!confirm('Delete this program?')) return;
-      const programs = DB.getArr('programs').filter(p=>p.id!==id);
-      DB.set('programs', programs);
-      showAlert('alertBox','Program deleted.','info');
-      renderPrograms();
-    }
-
-    function renderPrograms() {
-      const programs = DB.getArr('programs');
-      const parts = DB.getArr('participation');
-      const el = document.getElementById('programsList');
-      el.innerHTML = programs.map(p => {
-        const enrolled = parts.filter(x=>x.program===p.name).length;
-        return `<div style="padding:14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-              <div style="font-weight:700;font-size:14px;">${p.name}</div>
-              <div style="display:flex;gap:8px;margin-top:6px;">${typeBadge(p.type)}<span class="text-mono">${p.duration}</span></div>
-              <div class="text-mono" style="margin-top:6px;">${formatDate(p.start)} → ${formatDate(p.end)}</div>
-              <div style="margin-top:4px;font-size:12px;color:var(--text2);">${enrolled} students enrolled</div>
+    async function loadPrograms() {
+      try {
+        const programs = await apiCall('GET', '/programs');
+        const el = document.getElementById('programsList');
+        if (!programs.length) { el.innerHTML = '<p class="text-muted">No programs yet.</p>'; return; }
+        el.innerHTML = programs.map(p => `
+          <div style="padding:14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div>
+                <div style="font-weight:700;font-size:14px;">${p.name}</div>
+                <div style="display:flex;gap:8px;margin-top:6px;">${typeBadge(p.type)}<span class="text-mono">${p.duration || '—'}</span></div>
+                <div class="text-mono" style="margin-top:6px;">${formatDate(p.start)} → ${formatDate(p.end)}</div>
+                <div style="margin-top:4px;font-size:12px;color:var(--text2);">${p.desc || ''}</div>
+              </div>
+              <button class="btn btn-danger btn-sm" onclick="deleteProgram('${p.id}')">Delete</button>
             </div>
-            <button class="btn btn-danger btn-sm" onclick="deleteProgram('${p.id}')">Delete</button>
-          </div>
-        </div>`;
-      }).join('') || '<p class="text-muted">No programs yet.</p>';
+          </div>`).join('');
+      } catch (e) { document.getElementById('programsList').innerHTML = `<p class="text-muted">${e.message}</p>`; }
+    }
+
+    async function addProgram() {
+      const name = document.getElementById('pName').value.trim();
+      if (!name) return showAlert('alertBox', 'Program name is required.', 'error');
+      const btn = document.getElementById('addBtn');
+      btn.disabled = true; btn.textContent = 'Adding...';
+      try {
+        await apiCall('POST', '/programs', {
+          name, type: document.getElementById('pType').value,
+          desc: document.getElementById('pDesc').value,
+          start: document.getElementById('pStart').value,
+          end: document.getElementById('pEnd').value,
+          duration: document.getElementById('pDuration').value || '—',
+          eligibility: document.getElementById('pEligibility').value || 'All Students',
+        });
+        showAlert('alertBox', 'Program added successfully!', 'success');
+        ['pName', 'pDesc', 'pStart', 'pEnd', 'pDuration', 'pEligibility'].forEach(id => document.getElementById(id).value = '');
+        loadPrograms();
+      } catch (e) {
+        showAlert('alertBox', e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = '➕ Add Program';
+      }
+    }
+
+    async function deleteProgram(id) {
+      if (!confirm('Delete this program?')) return;
+      try {
+        await apiCall('DELETE', `/programs/${id}`);
+        showAlert('alertBox', 'Program deleted.', 'info');
+        loadPrograms();
+      } catch (e) { showAlert('alertBox', e.message, 'error'); }
     }
   </script>
 </body>

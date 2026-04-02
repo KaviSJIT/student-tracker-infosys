@@ -10,5 +10,6 @@ router.get('/students', adminController.getAllStudents);
 router.put('/students/:uid/approve', adminController.approveStudent);
 router.put('/students/:uid/reject', adminController.rejectStudent);
 router.get('/dashboard', adminController.getDashboardStats);
+router.get('/report', adminController.getReportData);
 
 module.exports = router;
