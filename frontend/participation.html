@@ -79,17 +79,15 @@
           <div class="card-header"><div class="card-title">Upload PDF Document</div><div class="card-tag">PDF ONLY</div></div>
           <div class="form-group">
             <label class="form-label">Program / Activity Name <span class="req">*</span></label>
-            <input type="text" id="uProgramName" class="form-control" placeholder="e.g. Infosys Virtual Internship"/>
+            <select id="uProgramName" class="form-control"><option value="">Loading programs...</option></select>
           </div>
           <div class="form-group">
             <label class="form-label">Document Type <span class="req">*</span></label>
             <select id="uDocType" class="form-control">
-              <option>Internship Completion Certificate</option>
-              <option>Project Report</option>
-              <option>Course Completion Certificate</option>
+              <option value="">Select document type</option>
+              <option>Completion Certificate</option>
               <option>Registration Screenshot</option>
               <option>Offer Letter</option>
-              <option>Other</option>
             </select>
           </div>
           <div class="form-group">
@@ -149,9 +147,12 @@
     async function loadPrograms() {
       try {
         const programs = await apiCall('GET', '/programs');
+        const opts = '<option value="">Select a program</option>' +
+          programs.map(p => `<option value="${p.name}" data-type="${p.type}">${p.name} (${p.type})</option>`).join('');
         const sel = document.getElementById('fProgram');
         sel.innerHTML = '<option value="">Select a program</option>' +
           programs.map(p => `<option value="${p.id}" data-name="${p.name}" data-type="${p.type}">${p.name} (${p.type})</option>`).join('');
+        document.getElementById('uProgramName').innerHTML = opts;
         const urlProg = new URLSearchParams(location.search).get('prog');
         if (urlProg) sel.value = urlProg;
       } catch (e) { console.error(e); }
@@ -197,8 +198,27 @@
             <div style="font-weight:600;font-size:14px;">${p.programName}</div>
             <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">${typeBadge(p.programType)} ${badgeHTML(p.status)}</div>
             <div class="text-mono" style="margin-top:8px;">Reg ID: ${p.regId || '—'} · ${formatDate(p.enrollDate)}</div>
+            ${p.status !== 'Completed' ? `
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <select id="status_${p.id}" style="padding:5px 10px;border-radius:8px;border:1px solid var(--border2);font-size:12px;background:var(--surface);color:var(--text);">
+                <option value="Doing" ${p.status==='Doing'?'selected':''}>Doing</option>
+                <option value="Completed">Completed</option>
+              </select>
+              <button onclick="updateStatus('${p.id}')" class="btn btn-sm btn-primary">Update</button>
+            </div>` : ''}
           </div>`).join('');
       } catch (e) { document.getElementById('mySubsList').innerHTML = `<p class="text-muted">${e.message}</p>`; }
+    }
+
+    async function updateStatus(id) {
+      const status = document.getElementById('status_' + id).value;
+      try {
+        await apiCall('PUT', `/student/participation/${id}`, { status });
+        showAlert('alertBox', '✅ Status updated!', 'success');
+        loadMySubmissions();
+      } catch (e) {
+        showAlert('alertBox', e.message, 'error');
+      }
     }
 
     // ── Upload ─────────────────────────────────────────
@@ -231,10 +251,10 @@
     }
 
     async function submitDoc() {
-      const programName = document.getElementById('uProgramName').value.trim();
+      const programName = document.getElementById('uProgramName').value;
       const docType = document.getElementById('uDocType').value;
       const description = document.getElementById('uDescription').value.trim();
-      if (!programName) return showAlert('alertBox', 'Program name is required.', 'error');
+      if (!programName) return showAlert('alertBox', 'Please select a program.', 'error');
       if (!selectedFile) return showAlert('alertBox', 'Please select a PDF file.', 'error');
 
       const btn = document.getElementById('uploadBtn');

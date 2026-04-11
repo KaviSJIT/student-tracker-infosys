@@ -5,16 +5,56 @@
   <title>Track Status – CompanyConnect</title>
   <link rel="stylesheet" href="shared.css"/>
   <style>
-    .stage-tracker { display: flex; align-items: center; margin: 16px 0; }
-    .stage-step { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; position: relative; }
-    .stage-step:not(:last-child)::after { content:''; position:absolute; top:18px; left:50%; width:100%; height:2px; background:var(--border); z-index:0; }
-    .stage-step.done:not(:last-child)::after { background: var(--success); }
-    .stage-dot { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; z-index: 1; border: 2px solid var(--border); background: var(--surface); }
-    .stage-step.done .stage-dot { background: var(--success); border-color: var(--success); color: #fff; }
-    .stage-step.current .stage-dot { background: var(--warning); border-color: var(--warning); color: #fff; }
-    .stage-label { font-size: 10px; font-family: var(--font-mono); color: var(--text3); text-align: center; }
-    .stage-step.done .stage-label { color: var(--success); }
-    .stage-step.current .stage-label { color: var(--warning); font-weight: 600; }
+    /* Timeline */
+    .timeline { display:flex; align-items:flex-start; margin:24px 0 8px; position:relative; }
+    .tl-step { display:flex; flex-direction:column; align-items:center; flex:1; position:relative; z-index:1; }
+
+    /* Base connector line (grey) */
+    .tl-step:not(:last-child)::after {
+      content:''; position:absolute; top:20px; left:50%; width:100%; height:3px;
+      background:var(--border); z-index:0; border-radius:99px;
+    }
+
+    /* Animated fill overlay on connector */
+    .tl-step:not(:last-child)::before {
+      content:''; position:absolute; top:20px; left:50%; width:0%; height:3px;
+      background:var(--success); z-index:1; border-radius:99px;
+      transition: width 0.6s ease;
+    }
+    .tl-step.done.animate::before  { width:100%; }
+    .tl-step.current.animate::before { width:50%; background: linear-gradient(90deg, var(--success), var(--warning)); }
+
+    /* Dot */
+    .tl-dot {
+      width:42px; height:42px; border-radius:50%; display:flex; align-items:center;
+      justify-content:center; font-size:18px; z-index:2;
+      border:3px solid var(--border); background:var(--surface);
+      transform:scale(0); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), background 0.3s, border-color 0.3s;
+      position:relative;
+    }
+    .tl-step.done.animate .tl-dot {
+      transform:scale(1); background:var(--success); border-color:var(--success); color:#fff;
+    }
+    .tl-step.current.animate .tl-dot {
+      transform:scale(1); background:var(--warning); border-color:var(--warning); color:#fff;
+      animation: ripple 1.5s infinite 0.4s;
+    }
+    .tl-step:not(.done):not(.current) .tl-dot { transform:scale(1); }
+
+    @keyframes ripple {
+      0%   { box-shadow: 0 0 0 0 rgba(245,158,11,0.5); }
+      70%  { box-shadow: 0 0 0 12px rgba(245,158,11,0); }
+      100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+    }
+
+    .tl-label { font-size:11px; font-family:var(--font-mono); color:var(--text3); text-align:center; margin-top:8px; }
+    .tl-step.done .tl-label    { color:var(--success); font-weight:600; }
+    .tl-step.current .tl-label { color:var(--warning); font-weight:700; }
+
+    .status-card { margin-bottom:20px; }
+    .status-card .card { padding:24px; }
+    .prog-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px; }
+    .prog-title { font-family:var(--font-head); font-size:17px; font-weight:700; }
   </style>
 </head>
 <body>
@@ -51,61 +91,186 @@
       }
     }
 
-    function stageHTML(currentStage) {
-      const stages = [{ icon: '📝', label: 'Submitted' }, { icon: '🔍', label: 'Under Review' }, { icon: '✅', label: 'Verified' }, { icon: '🏅', label: 'Completed' }];
-      return `<div class="stage-tracker">${stages.map((s, i) => {
-        const cls = i < currentStage ? 'done' : i === currentStage - 1 ? 'current' : '';
-        return `<div class="stage-step ${cls}"><div class="stage-dot">${i < currentStage ? '✓' : s.icon}</div><div class="stage-label">${s.label}</div></div>`;
-      }).join('')}</div>`;
+    // Returns stage index (1-based) based on status string
+    function getDocStage(status) {
+      if (status === 'Completed')      return 4;
+      if (status === 'Verified')        return 3;
+      if (status === 'Need Re-upload')  return 2;
+      if (status === 'Under Review')    return 2;
+      return 1;
+    }
+
+    function getPartStage(status) {
+      if (status === 'Completed' || status === 'Verified') return 4;
+      if (status === 'Doing')   return 2;
+      return 1;
+    }
+
+    function timelineHTML(stages, currentStage, id) {
+      return `
+        <div class="timeline" id="tl_${id}">
+          ${stages.map((s, i) => {
+            const stepNum = i + 1;
+            const isDone    = stepNum < currentStage;
+            const isCurrent = stepNum === currentStage;
+            const cls = isDone ? 'done' : isCurrent ? 'current' : '';
+            return `
+              <div class="tl-step ${cls}" data-delay="${i * 150}">
+                <div class="tl-dot">${isDone ? '✓' : s.icon}</div>
+                <div class="tl-label">${s.label}</div>
+              </div>`;
+          }).join('')}
+        </div>`;
     }
 
     function renderStatus(parts, docs) {
       const el = document.getElementById('statusList');
+      const partStages = [{ icon:'📝', label:'Enrolled' }, { icon:'⚡', label:'In Progress' }, { icon:'🔍', label:'Verified' }, { icon:'🏅', label:'Completed' }];
 
-      // Show document statuses
-      let html = '';
-      if (docs.length) {
-        html += `<h3 style="margin-bottom:12px;font-family:var(--font-head);">📎 Document Submissions</h3>`;
-        html += docs.map(d => {
-          const stage = d.status === 'Verified' ? 3 : d.status === 'Under Review' ? 2 : 1;
-          return `<div class="card mb-4">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-              <div>
-                <div style="font-family:var(--font-head);font-size:17px;font-weight:700;">${d.programName}</div>
-                <div style="display:flex;gap:8px;margin-top:6px;">${badgeHTML(d.status)}</div>
-              </div>
-              <div style="text-align:right;">
-                <div class="text-mono">${d.docType}</div>
-                <div class="text-mono">${formatDate(d.submittedAt)}</div>
-                <a href="${d.driveLink}" target="_blank" style="font-size:12px;color:var(--primary);">🔗 View Doc</a>
-              </div>
-            </div>
-            ${stageHTML(stage)}
-            ${d.adminRemark ? `<div style="margin-top:10px;padding:10px;background:#fff3cd;border-radius:8px;font-size:13px;">⚠️ Admin Remark: <strong>${d.adminRemark}</strong></div>` : ''}
-            ${d.status === 'Need Re-upload' || d.status === 'Rejected' ? `<div class="mt-4"><a href="upload.html" class="btn btn-warning btn-sm">🔄 Re-submit Document</a></div>` : ''}
-          </div>`;
-        }).join('');
-      }
+      // Deduplicate by programName keeping latest
+      const deduped = Object.values(parts.reduce((acc, p) => {
+        if (!acc[p.programName] || new Date(p.submittedOn) > new Date(acc[p.programName].submittedOn)) acc[p.programName] = p;
+        return acc;
+      }, {}));
 
-      if (parts.length) {
-        html += `<h3 style="margin:20px 0 12px;font-family:var(--font-head);">📝 Participation Submissions</h3>`;
-        html += parts.map(p => `
-          <div class="card mb-4">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      const pending   = deduped.filter(p => p.status !== 'Verified' && p.status !== 'Completed' && p.status !== 'Rejected' && p.status !== 'Need Re-upload');
+      const completed = deduped.filter(p => p.status === 'Verified' || p.status === 'Completed');
+
+      // Rejected: from participation + documents marked Need Re-upload
+      const rejectedParts = deduped.filter(p => p.status === 'Rejected' || p.status === 'Need Re-upload');
+      const rejectedDocs  = docs.filter(d => d.status === 'Need Re-upload' || d.status === 'Rejected');
+      const rejected = [
+        ...rejectedParts,
+        ...rejectedDocs.map(d => ({ ...d, programType: d.docType, isDoc: true }))
+      ];
+
+      const cardHTML = (p, i, prefix) => `
+        <div class="status-card">
+          <div class="card">
+            <div class="prog-header">
               <div>
-                <div style="font-family:var(--font-head);font-size:17px;font-weight:700;">${p.programName}</div>
+                <div class="prog-title">${p.programName}</div>
                 <div style="display:flex;gap:8px;margin-top:6px;">${typeBadge(p.programType)} ${badgeHTML(p.status)}</div>
               </div>
               <div style="text-align:right;"><div class="text-mono">Enrolled: ${formatDate(p.enrollDate)}</div></div>
             </div>
-          </div>`).join('');
+            ${timelineHTML(partStages, getPartStage(p.status), prefix + i)}
+          </div>
+        </div>`;
+
+      const rejectedCardHTML = (p, i) => `
+        <div class="status-card">
+          <div class="card">
+            <div class="prog-header">
+              <div>
+                <div class="prog-title">${p.programName}</div>
+                <div style="display:flex;gap:8px;margin-top:6px;">
+                  ${p.isDoc ? `<span class="badge badge-submitted">${p.docType}</span>` : typeBadge(p.programType)}
+                  ${badgeHTML(p.status)}
+                </div>
+              </div>
+              <div style="text-align:right;"><div class="text-mono">${p.isDoc ? formatDate(p.submittedAt) : formatDate(p.enrollDate)}</div></div>
+            </div>
+            ${p.adminRemark ? `<div style="margin:12px 0;padding:10px;background:#fee2e2;border-radius:8px;font-size:13px;color:#991b1b;">⚠️ Admin Remark: <strong>${p.adminRemark}</strong></div>` : ''}
+            <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:14px;">
+              <div style="font-size:13px;font-weight:600;margin-bottom:10px;">🔄 Re-upload Proof (PDF)</div>
+              <div id="rzone_${p.id}" onclick="document.getElementById('rpdf_${p.id}').click()" style="border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;background:var(--surface2);font-size:13px;color:var(--text3);">
+                📄 Click to select PDF (max 10MB)
+              </div>
+              <input type="file" id="rpdf_${p.id}" accept="application/pdf" style="display:none;" onchange="onReuploadSelect(event,'${p.id}','${p.programName}','${p.isDoc ? 'doc' : 'part'}','${p.docType||''}')"/>
+              <div id="rpreview_${p.id}" style="display:none;margin-top:8px;padding:10px;background:rgba(59,40,204,0.06);border-radius:8px;font-size:13px;align-items:center;gap:8px;">
+                <span>📄</span><span id="rfilename_${p.id}" style="flex:1;"></span>
+                <button onclick="reuploadDoc('${p.id}','${p.programName}','${p.isDoc ? 'doc' : 'part'}','${p.docType||''}')" class="btn btn-sm btn-primary">📤 Upload</button>
+                <button onclick="clearReupload('${p.id}')" style="background:none;border:none;cursor:pointer;color:var(--text3);">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      let html = '';
+
+      if (pending.length) {
+        html += `<h3 style="margin-bottom:16px;font-family:var(--font-head);">⏳ Pending Verifications</h3>`;
+        html += pending.map((p, i) => cardHTML(p, i, 'pend_')).join('');
       }
 
-      if (!docs.length && !parts.length) {
+      if (completed.length) {
+        html += `<h3 style="margin:24px 0 16px;font-family:var(--font-head);">✅ Completed Verifications</h3>`;
+        html += completed.map((p, i) => cardHTML(p, i, 'comp_')).join('');
+      }
+
+      if (rejected.length) {
+        html += `<h3 style="margin:24px 0 16px;font-family:var(--font-head);color:var(--danger);">❌ Rejected / Re-upload Required</h3>`;
+        html += rejected.map((p, i) => rejectedCardHTML(p, i)).join('');
+      }
+
+      if (!parts.length) {
         html = `<div class="card"><p style="text-align:center;padding:32px;" class="text-muted">No submissions yet. <a href="participation.html">Submit participation →</a></p></div>`;
       }
 
       el.innerHTML = html;
+
+      // Animate each timeline sequentially: dot pops → line fills → next dot pops → ...
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.timeline').forEach(tl => {
+          const steps = Array.from(tl.querySelectorAll('.tl-step'));
+          let delay = 300;
+          steps.forEach(step => {
+            if (step.classList.contains('done') || step.classList.contains('current')) {
+              setTimeout(() => step.classList.add('animate'), delay);
+              delay += 500;
+            }
+          });
+        });
+      });
+    }
+    const reuploadFiles = {};
+
+    function onReuploadSelect(e, id, programName, type, docType) {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { alert('File size must be under 10MB.'); return; }
+      reuploadFiles[id] = { file, type, docType };
+      document.getElementById('rfilename_' + id).textContent = file.name;
+      document.getElementById('rpreview_' + id).style.display = 'flex';
+      document.getElementById('rzone_' + id).style.display = 'none';
+    }
+
+    function clearReupload(id) {
+      delete reuploadFiles[id];
+      document.getElementById('rpdf_' + id).value = '';
+      document.getElementById('rpreview_' + id).style.display = 'none';
+      document.getElementById('rzone_' + id).style.display = 'block';
+    }
+
+    async function reuploadDoc(id, programName, type, docType) {
+      const entry = reuploadFiles[id];
+      if (!entry) return;
+      const btn = event.target;
+      btn.disabled = true; btn.textContent = 'Uploading...';
+      try {
+        const formData = new FormData();
+        formData.append('pdf', entry.file);
+        formData.append('programName', programName);
+        formData.append('docType', docType || 'Completion Certificate');
+        formData.append('description', 'Re-upload');
+        if (type === 'doc') formData.append('replaceDocId', id);
+        const res = await fetch(`${API}/upload`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` },
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        if (type === 'part') {
+          await apiCall('PUT', `/student/participation/${id}`, { status: 'Doing' });
+        }
+        alert('✅ Document re-uploaded successfully!');
+        loadStatus();
+      } catch (e) {
+        alert('❌ ' + e.message);
+        btn.disabled = false; btn.textContent = '📤 Upload';
+      }
     }
   </script>
 </body>

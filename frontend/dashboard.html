@@ -107,9 +107,8 @@
         // Chart data
         const types = ['Training', 'Internship', 'Certification', 'Workshop'];
         const completedByType = types.map(t => parts.filter(p => p.programType === t && p.status === 'Completed').length);
-        const doingByType    = types.map(t => parts.filter(p => p.programType === t && p.status !== 'Completed').length);
+        const doingByType     = types.map(t => parts.filter(p => p.programType === t && p.status !== 'Completed').length);
 
-        // Bar chart
         if (barChartInstance) barChartInstance.destroy();
         barChartInstance = new Chart(document.getElementById('barChart'), {
           type: 'bar',

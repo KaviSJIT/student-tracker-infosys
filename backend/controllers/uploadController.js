@@ -1,11 +1,16 @@
-const { db, bucket } = require('../firebase');
+const { db } = require('../firebase');
 const multer = require('multer');
-const path = require('path');
+const cloudinary = require('cloudinary').v2;
 
-const storage = multer.memoryStorage();
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf') cb(null, true);
     else cb(new Error('Only PDF files are allowed.'));
@@ -17,7 +22,7 @@ exports.uploadMiddleware = upload.single('pdf');
 // ── STUDENT UPLOADS PDF ───────────────────────────────
 exports.submitDocument = async (req, res) => {
   try {
-    const { programName, docType, description } = req.body;
+    const { programName, docType, description, replaceDocId } = req.body;
     const { uid, email } = req.user;
 
     if (!req.file) return res.status(400).json({ message: 'PDF file is required.' });
@@ -27,12 +32,27 @@ exports.submitDocument = async (req, res) => {
     if (!studentDoc.exists) return res.status(404).json({ message: 'Student not found.' });
     const student = studentDoc.data();
 
-    // Upload PDF to Firebase Storage
-    const fileName = `documents/${uid}/${Date.now()}_${req.file.originalname.replace(/\s+/g, '_')}`;
-    const file = bucket.file(fileName);
-    await file.save(req.file.buffer, { metadata: { contentType: 'application/pdf' } });
-    await file.makePublic();
-    const fileUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+    // Upload to Cloudinary
+    const fileUrl = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { resource_type: 'raw', folder: 'companyconnect', format: 'pdf' },
+        (err, result) => err ? reject(err) : resolve(result.secure_url)
+      );
+      stream.end(req.file.buffer);
+    });
+
+    // If re-uploading, update the existing doc record instead of creating new
+    if (replaceDocId) {
+      await db.collection('documents').doc(replaceDocId).update({
+        fileUrl,
+        fileName: req.file.originalname,
+        status: 'Under Review',
+        adminRemark: '',
+        submittedAt: new Date().toISOString(),
+        reviewedAt: null,
+      });
+      return res.status(200).json({ message: 'Document re-uploaded successfully.', id: replaceDocId });
+    }
 
     const docRef = await db.collection('documents').add({
       studentUid: uid,
