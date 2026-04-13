@@ -33,6 +33,13 @@
             <div class="form-group"><label class="form-label">Duration</label><input id="pDuration" class="form-control" placeholder="4 Weeks"/></div>
             <div class="form-group"><label class="form-label">Eligibility</label><input id="pEligibility" class="form-control" placeholder="All Students"/></div>
           </div>
+          <div class="form-group"><label class="form-label">Assign To</label>
+            <select id="pAssignTo" class="form-control">
+              <option value="all">All (Students & Faculty)</option>
+              <option value="students">Students Only</option>
+              <option value="faculty">Faculty Only</option>
+            </select>
+          </div>
           <button class="btn btn-primary btn-lg" id="addBtn" onclick="addProgram()">➕ Add Program</button>
         </div>
         <div class="card">
@@ -61,7 +68,7 @@
             <div style="display:flex;justify-content:space-between;align-items:flex-start;">
               <div>
                 <div style="font-weight:700;font-size:14px;">${p.name}</div>
-                <div style="display:flex;gap:8px;margin-top:6px;">${typeBadge(p.type)}<span class="text-mono">${p.duration || '—'}</span></div>
+                <div style="display:flex;gap:8px;margin-top:6px;">${typeBadge(p.type)}<span class="text-mono">${p.duration || '—'}</span><span class="badge badge-submitted">${p.assignTo === 'faculty' ? '🎓 Faculty' : p.assignTo === 'students' ? '👤 Students' : '👥 All'}</span></div>
                 <div class="text-mono" style="margin-top:6px;">${formatDate(p.start)} → ${formatDate(p.end)}</div>
                 <div style="margin-top:4px;font-size:12px;color:var(--text2);">${p.desc || ''}</div>
               </div>
@@ -84,9 +91,11 @@
           end: document.getElementById('pEnd').value,
           duration: document.getElementById('pDuration').value || '—',
           eligibility: document.getElementById('pEligibility').value || 'All Students',
+          assignTo: document.getElementById('pAssignTo').value,
         });
         showAlert('alertBox', 'Program added successfully!', 'success');
         ['pName', 'pDesc', 'pStart', 'pEnd', 'pDuration', 'pEligibility'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('pAssignTo').value = 'all';
         loadPrograms();
       } catch (e) {
         showAlert('alertBox', e.message, 'error');

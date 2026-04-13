@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Track Status – Faculty – CompanyConnect</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <style>
+    .timeline { display:flex; align-items:flex-start; margin:24px 0 8px; position:relative; }
+    .tl-step { display:flex; flex-direction:column; align-items:center; flex:1; position:relative; z-index:1; }
+    .tl-step:not(:last-child)::after { content:''; position:absolute; top:20px; left:50%; width:100%; height:3px; background:var(--border); z-index:0; border-radius:99px; }
+    .tl-step:not(:last-child)::before { content:''; position:absolute; top:20px; left:50%; width:0%; height:3px; background:var(--success); z-index:1; border-radius:99px; transition: width 0.6s ease; }
+    .tl-step.done.animate::before { width:100%; }
+    .tl-step.current.animate::before { width:50%; background: linear-gradient(90deg, var(--success), var(--warning)); }
+    .tl-dot { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; z-index:2; border:3px solid var(--border); background:var(--surface); transform:scale(0); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), background 0.3s, border-color 0.3s; position:relative; }
+    .tl-step.done.animate .tl-dot { transform:scale(1); background:var(--success); border-color:var(--success); color:#fff; }
+    .tl-step.current.animate .tl-dot { transform:scale(1); background:var(--warning); border-color:var(--warning); color:#fff; animation: ripple 1.5s infinite 0.4s; }
+    .tl-step:not(.done):not(.current) .tl-dot { transform:scale(1); }
+    @keyframes ripple { 0%{box-shadow:0 0 0 0 rgba(245,158,11,0.5)} 70%{box-shadow:0 0 0 12px rgba(245,158,11,0)} 100%{box-shadow:0 0 0 0 rgba(245,158,11,0)} }
+    .tl-label { font-size:11px; font-family:var(--font-mono); color:var(--text3); text-align:center; margin-top:8px; }
+    .tl-step.done .tl-label { color:var(--success); font-weight:600; }
+    .tl-step.current .tl-label { color:var(--warning); font-weight:700; }
+    .status-card { margin-bottom:20px; }
+    .status-card .card { padding:24px; }
+    .prog-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px; }
+    .prog-title { font-family:var(--font-head); font-size:17px; font-weight:700; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand" style="text-decoration:none;"><div class="brand-hex">⬡</div><div><div class="brand-name">CompanyConnect</div><div class="brand-sub">Infosys Springboard Tracker</div></div></a>
+    <div class="nav-links"><span id="navUser" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="login.html" onclick="Auth.logout()" class="btn-nav">Logout</a></div>
+  </nav>
+  <div class="app-layout">
+    <aside class="sidebar"><div class="sidebar-section"><div class="sidebar-label">Faculty Menu</div><div id="sidebarLinks"></div></div></aside>
+    <main class="main-content">
+      <div class="page-header anim"><div class="breadcrumb">Faculty / <span>Track Status</span></div><h1>Track Status</h1><p>Monitor your document verification and participation progress.</p></div>
+      <div id="statusList" class="anim anim-1"><p class="text-muted">Loading...</p></div>
+    </main>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    const faculty = requireFaculty();
+    if (faculty) {
+      document.getElementById('navUser').textContent = faculty.name;
+      document.getElementById('sidebarLinks').innerHTML = buildFacultyNav('faculty-status.html');
+      loadStatus();
+    }
+
+    async function loadStatus() {
+      try {
+        const [parts, docs] = await Promise.all([
+          apiCall('GET', '/faculty/participation'),
+          apiCall('GET', '/upload/my'),
+        ]);
+        renderStatus(parts, docs);
+      } catch (err) {
+        document.getElementById('statusList').innerHTML = `<div class="card"><p class="text-muted">${err.message}</p></div>`;
+      }
+    }
+
+    function getPartStage(status) {
+      if (status === 'Completed' || status === 'Verified') return 4;
+      if (status === 'Doing') return 2;
+      return 1;
+    }
+
+    function timelineHTML(stages, currentStage, id) {
+      return `<div class="timeline" id="tl_${id}">${stages.map((s, i) => {
+        const stepNum = i+1, isDone = stepNum < currentStage, isCurrent = stepNum === currentStage;
+        const cls = isDone ? 'done' : isCurrent ? 'current' : '';
+        return `<div class="tl-step ${cls}"><div class="tl-dot">${isDone ? '✓' : s.icon}</div><div class="tl-label">${s.label}</div></div>`;
+      }).join('')}</div>`;
+    }
+
+    function renderStatus(parts, docs) {
+      const el = document.getElementById('statusList');
+      const partStages = [{icon:'📝',label:'Enrolled'},{icon:'⚡',label:'In Progress'},{icon:'🔍',label:'Verified'},{icon:'🏅',label:'Completed'}];
+
+      const deduped = Object.values(parts.reduce((acc, p) => {
+        if (!acc[p.programName] || new Date(p.submittedOn) > new Date(acc[p.programName].submittedOn)) acc[p.programName] = p;
+        return acc;
+      }, {}));
+
+      const pending   = deduped.filter(p => p.status !== 'Verified' && p.status !== 'Completed' && p.status !== 'Rejected' && p.status !== 'Need Re-upload');
+      const completed = deduped.filter(p => p.status === 'Verified' || p.status === 'Completed');
+      const rejected  = deduped.filter(p => p.status === 'Rejected' || p.status === 'Need Re-upload');
+
+      const cardHTML = (p, i, prefix) => `
+        <div class="status-card"><div class="card">
+          <div class="prog-header">
+            <div><div class="prog-title">${p.programName}</div><div style="display:flex;gap:8px;margin-top:6px;">${typeBadge(p.programType)} ${badgeHTML(p.status)}</div></div>
+            <div style="text-align:right;"><div class="text-mono">Enrolled: ${formatDate(p.enrollDate)}</div></div>
+          </div>
+          ${timelineHTML(partStages, getPartStage(p.status), prefix+i)}
+        </div></div>`;
+
+      let html = '';
+      if (pending.length) { html += `<h3 style="margin-bottom:16px;font-family:var(--font-head);">⏳ Pending Verifications</h3>`; html += pending.map((p,i) => cardHTML(p,i,'pend_')).join(''); }
+      if (completed.length) { html += `<h3 style="margin:24px 0 16px;font-family:var(--font-head);">✅ Completed Verifications</h3>`; html += completed.map((p,i) => cardHTML(p,i,'comp_')).join(''); }
+      if (rejected.length) { html += `<h3 style="margin:24px 0 16px;font-family:var(--font-head);color:var(--danger);">❌ Rejected / Re-upload Required</h3>`; html += rejected.map((p,i) => cardHTML(p,i,'rej_')).join(''); }
+      if (!parts.length) html = `<div class="card"><p style="text-align:center;padding:32px;" class="text-muted">No submissions yet. <a href="faculty-participation.html">Submit participation →</a></p></div>`;
+
+      el.innerHTML = html;
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.timeline').forEach(tl => {
+          const steps = Array.from(tl.querySelectorAll('.tl-step'));
+          let delay = 300;
+          steps.forEach(step => { if (step.classList.contains('done') || step.classList.contains('current')) { setTimeout(() => step.classList.add('animate'), delay); delay += 500; } });
+        });
+      });
+    }
+  </script>
+</body>
+</html>

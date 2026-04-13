@@ -146,6 +146,52 @@ exports.sendPasswordReset = async (req, res) => {
   }
 };
 
+// ── FACULTY LOGIN ───────────────────────────────────────────
+exports.loginFaculty = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) return res.status(400).json({ message: 'ID token required.' });
+    const decoded = await auth.verifyIdToken(idToken);
+    const uid = decoded.uid;
+    const doc = await db.collection('faculty').doc(uid).get();
+    if (!doc.exists) return res.status(403).json({ message: 'Not a faculty account.' });
+    const faculty = doc.data();
+    if (faculty.status === 'pending') return res.status(403).json({ message: 'Your registration is pending admin approval.' });
+    if (faculty.status === 'rejected') return res.status(403).json({ message: 'Your registration was rejected by admin.' });
+    const token = jwt.sign({ uid, role: 'faculty', email: faculty.email }, JWT_SECRET, { expiresIn: '7d' });
+    res.status(200).json({ message: 'Faculty login successful.', token, faculty });
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid or expired token.', error: error.message });
+  }
+};
+
+// ── FACULTY REGISTER ───────────────────────────────────────────
+exports.registerFaculty = async (req, res) => {
+  try {
+    const { email, password, name, employeeId, department, designation, phone, college } = req.body;
+    if (!email || !password || !name || !employeeId) return res.status(400).json({ message: 'Required fields missing.' });
+
+    const existing = await db.collection('faculty').where('employeeId', '==', employeeId).get();
+    if (!existing.empty) return res.status(400).json({ message: 'Employee ID already registered.' });
+
+    const userRecord = await auth.createUser({ email, password, displayName: name, disabled: true });
+
+    await db.collection('faculty').doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      email, name, employeeId, department, designation, phone, college,
+      role: 'faculty',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    });
+
+    res.status(201).json({ message: 'Faculty registration request sent. Awaiting admin approval.' });
+  } catch (error) {
+    if (error.code === 'auth/email-already-exists') return res.status(400).json({ message: 'Email already registered.' });
+    console.error('registerFaculty error:', error);
+    res.status(500).json({ message: 'Registration failed.', error: error.message });
+  }
+};
+
 // ── GET CURRENT USER PROFILE ──────────────────────────
 exports.getMe = async (req, res) => {
   try {

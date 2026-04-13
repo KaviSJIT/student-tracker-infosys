@@ -20,6 +20,8 @@ const Auth = {
   getUser: () => JSON.parse(localStorage.getItem('currentUser') || 'null'),
   setAdmin: a => localStorage.setItem('currentAdmin', JSON.stringify(a)),
   getAdmin: () => JSON.parse(localStorage.getItem('currentAdmin') || 'null'),
+  setFaculty: f => localStorage.setItem('currentFaculty', JSON.stringify(f)),
+  getFaculty: () => JSON.parse(localStorage.getItem('currentFaculty') || 'null'),
   logout: () => {
     localStorage.clear();
     if (typeof firebase !== 'undefined') firebase.auth().signOut();
@@ -47,6 +49,11 @@ function requireAdmin() {
   const a = Auth.getAdmin();
   if (!a) { window.location.href = 'admin-login.html'; return null; }
   return a;
+}
+function requireFaculty() {
+  const f = Auth.getFaculty();
+  if (!f) { window.location.href = 'faculty-login.html'; return null; }
+  return f;
 }
 
 function formatDate(d) {
@@ -85,6 +92,16 @@ function buildStudentNav(active) {
     { href: 'participation.html', icon: '📝', label: 'Submit Participation' },
     { href: 'status.html', icon: '🔍', label: 'Track Status' },
     { href: 'profile.html', icon: '⚙️', label: 'Settings' },
+  ].map(n => `<a href="${n.href}" class="${active === n.href ? 'active' : ''}"><span class="icon">${n.icon}</span>${n.label}</a>`).join('');
+}
+
+function buildFacultyNav(active) {
+  return [
+    { href: 'faculty-dashboard.html', icon: '📊', label: 'Dashboard' },
+    { href: 'faculty-programs.html', icon: '📚', label: 'Programs' },
+    { href: 'faculty-participation.html', icon: '📝', label: 'Submit Participation' },
+    { href: 'faculty-status.html', icon: '🔍', label: 'Track Status' },
+    { href: 'faculty-settings.html', icon: '⚙️', label: 'Settings' },
   ].map(n => `<a href="${n.href}" class="${active === n.href ? 'active' : ''}"><span class="icon">${n.icon}</span>${n.label}</a>`).join('');
 }
 

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings – Faculty – CompanyConnect</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="shared.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand" style="text-decoration:none;"><div class="brand-hex">⬡</div><div><div class="brand-name">CompanyConnect</div><div class="brand-sub">Infosys Springboard Tracker</div></div></a>
+    <div class="nav-links"><span id="navUser" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="login.html" onclick="Auth.logout()" class="btn-nav">Logout</a></div>
+  </nav>
+  <div class="app-layout">
+    <aside class="sidebar"><div class="sidebar-section"><div class="sidebar-label">Faculty Menu</div><div id="sidebarLinks"></div></div></aside>
+    <main class="main-content">
+      <div class="page-header anim"><div class="breadcrumb">Faculty / <span>Settings</span></div><h1>Settings</h1><p>Manage your profile and account security.</p></div>
+      <div id="alertBox"></div>
+      <div class="grid-sidebar anim anim-1">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Profile Details</div><div class="card-tag">EDITABLE</div></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Full Name</label><input id="pName" class="form-control" disabled style="opacity:0.6;cursor:not-allowed;"/></div>
+            <div class="form-group"><label class="form-label">Email</label><input id="pEmail" class="form-control" disabled style="opacity:0.6;cursor:not-allowed;"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Department</label><input id="pDept" class="form-control" placeholder="CSE"/></div>
+            <div class="form-group"><label class="form-label">Phone</label><input id="pPhone" class="form-control" placeholder="9876543210"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Designation</label><input id="pDesignation" class="form-control" placeholder="Assistant Professor"/></div>
+            <div class="form-group"><label class="form-label">College</label><input id="pCollege" class="form-control" placeholder="St. Joseph's College of Engineering"/></div>
+          </div>
+          <div class="mt-4"><button class="btn btn-primary btn-lg" id="saveBtn" onclick="saveProfile()">💾 Save Profile</button></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:24px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Profile Summary</div></div>
+            <div id="summaryBox"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Change Password</div><div class="card-tag">SECURITY</div></div>
+            <div id="pwAlertBox"></div>
+            <div id="step1">
+              <p style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.6;">To change your password, we'll send a verification email to your registered address. Click the link to verify — you'll then be redirected to set your new password.</p>
+              <button class="btn btn-primary" id="sendEmailBtn" onclick="sendResetEmail()">📧 Send Verification Email</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const faculty = requireFaculty();
+    if (faculty) {
+      document.getElementById('navUser').textContent = faculty.name;
+      document.getElementById('sidebarLinks').innerHTML = buildFacultyNav('faculty-settings.html');
+      fillForm(faculty);
+    }
+
+    function fillForm(f) {
+      document.getElementById('pName').value = f.name || '';
+      document.getElementById('pEmail').value = f.email || '';
+      document.getElementById('pDept').value = f.department || '';
+      document.getElementById('pPhone').value = f.phone || '';
+      document.getElementById('pDesignation').value = f.designation || '';
+      document.getElementById('pCollege').value = f.college || '';
+      renderSummary(f);
+    }
+
+    async function saveProfile() {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true; btn.textContent = 'Saving...';
+      try {
+        const updates = {
+          department: document.getElementById('pDept').value,
+          phone: document.getElementById('pPhone').value,
+          designation: document.getElementById('pDesignation').value,
+          college: document.getElementById('pCollege').value,
+        };
+        await apiCall('PUT', '/faculty/profile', updates);
+        const updated = { ...faculty, ...updates };
+        Auth.setFaculty(updated);
+        showAlert('alertBox', 'Profile saved successfully!', 'success');
+        renderSummary(updated);
+      } catch (e) { showAlert('alertBox', e.message, 'error'); }
+      finally { btn.disabled = false; btn.textContent = '💾 Save Profile'; }
+    }
+
+    async function sendResetEmail() {
+      const btn = document.getElementById('sendEmailBtn');
+      btn.disabled = true; btn.textContent = 'Sending...';
+      try {
+        await apiCall('POST', '/auth/send-password-reset', { email: faculty.email });
+        showAlert('pwAlertBox', '📧 Verification email sent to ' + faculty.email + '. Check your inbox.', 'success');
+        btn.textContent = '✅ Email Sent';
+      } catch (e) { showAlert('pwAlertBox', e.message, 'error'); btn.disabled = false; btn.textContent = '📧 Send Verification Email'; }
+    }
+
+    function renderSummary(f) {
+      document.getElementById('summaryBox').innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--primary),var(--accent2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;">🎓</div>
+            <div><div style="font-family:var(--font-head);font-weight:700;">${f.name||'—'}</div><div class="text-mono">${f.email||'—'}</div></div>
+          </div>
+          ${[['Department',f.department],['Designation',f.designation],['College',f.college],['Phone',f.phone]].map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span class="text-muted">${l}</span><span style="font-weight:500;">${v||'—'}</span></div>`).join('')}
+        </div>`;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Faculty Dashboard – CompanyConnect</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand" style="text-decoration:none;"><div class="brand-hex">⬡</div><div><div class="brand-name">CompanyConnect</div><div class="brand-sub">Infosys Springboard Tracker</div></div></a>
+    <div class="nav-links"><span id="navUser" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="login.html" onclick="Auth.logout()" class="btn-nav">Logout</a></div>
+  </nav>
+  <div class="app-layout">
+    <aside class="sidebar"><div class="sidebar-section"><div class="sidebar-label">Faculty Menu</div><div id="sidebarLinks"></div></div></aside>
+    <main class="main-content">
+      <div class="page-header anim">
+        <div class="breadcrumb">Faculty / <span>Dashboard</span></div>
+        <h1 id="welcomeHead">Welcome back 👋</h1>
+        <p>Track your Infosys Springboard participation and program status here.</p>
+      </div>
+      <div class="stats-row anim anim-1" id="statsRow"></div>
+
+      <div class="anim anim-2" style="margin-bottom:24px;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Progress by Type</div>
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#22c55e;font-weight:600;"><span style="width:8px;height:8px;background:#22c55e;border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>LIVE</span>
+          </div>
+          <canvas id="barChart" height="100" style="background:transparent;"></canvas>
+        </div>
+      </div>
+      <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}</style>
+
+      <div class="grid-sidebar anim anim-3">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">My Submissions</div>
+            <a href="faculty-participation.html" class="btn btn-sm btn-outline">+ New Submission</a>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Program</th><th>Type</th><th>Status</th><th>Date</th></tr></thead>
+              <tbody id="subBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">My Profile</div><a href="faculty-settings.html" class="btn btn-sm btn-outline">Edit</a></div>
+            <div id="profileInfo"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Quick Actions</div></div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <a href="faculty-participation.html" class="btn btn-primary btn-full">📝 Submit Participation</a>
+              <a href="faculty-participation.html" class="btn btn-outline btn-full">📎 Upload Documents</a>
+              <a href="faculty-status.html" class="btn btn-outline btn-full">🔍 Track Status</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    const faculty = requireFaculty();
+    if (faculty) {
+      document.getElementById('navUser').textContent = faculty.name;
+      document.getElementById('welcomeHead').textContent = `Welcome back, ${faculty.name?.split(' ')[0]} 👋`;
+      document.getElementById('sidebarLinks').innerHTML = buildFacultyNav('faculty-dashboard.html');
+      document.getElementById('profileInfo').innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span class="text-muted">Name</span><span style="font-weight:600;">${faculty.name||'—'}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span class="text-muted">Email</span><span class="text-mono">${faculty.email||'—'}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;"><span class="text-muted">Department</span><span style="font-weight:600;">${faculty.department||'—'}</span></div>
+        </div>`;
+      loadDashboardData();
+    }
+
+    let barChartInstance = null;
+
+    async function loadDashboardData() {
+      try {
+        const [parts, docs] = await Promise.all([
+          apiCall('GET', '/faculty/participation'),
+          apiCall('GET', '/faculty/documents'),
+        ]);
+        const completed = parts.filter(p => p.status === 'Completed').length;
+        const verified  = docs.filter(d => d.status === 'Verified').length;
+
+        document.getElementById('statsRow').innerHTML = `
+          <div class="stat-card"><div class="stat-icon">📝</div><div class="stat-label">Programs Enrolled</div><div class="stat-value">${parts.length}</div></div>
+          <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-label">Completed</div><div class="stat-value">${completed}</div></div>
+          <div class="stat-card"><div class="stat-icon">📎</div><div class="stat-label">Docs Submitted</div><div class="stat-value">${docs.length}</div></div>
+          <div class="stat-card"><div class="stat-icon">🏅</div><div class="stat-label">Docs Verified</div><div class="stat-value">${verified}</div></div>`;
+
+        const types = ['Training','Internship','Certification','Workshop'];
+        const completedByType = types.map(t => parts.filter(p => p.programType===t && p.status==='Completed').length);
+        const doingByType     = types.map(t => parts.filter(p => p.programType===t && p.status!=='Completed').length);
+
+        if (barChartInstance) barChartInstance.destroy();
+        barChartInstance = new Chart(document.getElementById('barChart'), {
+          type: 'line',
+          data: { labels: types, datasets: [
+            { label:'Completed', data:completedByType, borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.15)', pointBackgroundColor:'#10b981', pointRadius:5, pointHoverRadius:7, fill:true, tension:0.5, borderWidth:3 },
+            { label:'In Progress', data:doingByType, borderColor:'#3b28cc', backgroundColor:'rgba(59,40,204,0.1)', pointBackgroundColor:'#3b28cc', pointRadius:5, pointHoverRadius:7, fill:true, tension:0.5, borderWidth:3 },
+          ]},
+          options: { responsive:true, plugins:{legend:{labels:{color:'#475569',font:{size:12}}}}, scales:{ x:{ticks:{color:'#475569'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{color:'#475569',stepSize:1,precision:0},grid:{color:'rgba(0,0,0,0.06)'},beginAtZero:true} } }
+        });
+
+        const tbody = document.getElementById('subBody');
+        if (!parts.length) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:32px;">No submissions yet. <a href="faculty-participation.html">Submit now →</a></td></tr>';
+        } else {
+          tbody.innerHTML = parts.map(p => `<tr><td class="td-name">${p.programName}</td><td>${typeBadge(p.programType)}</td><td>${badgeHTML(p.status)}</td><td class="td-mono">${formatDate(p.submittedOn)}</td></tr>`).join('');
+        }
+      } catch (err) {
+        document.getElementById('statsRow').innerHTML = `<p class="text-muted">${err.message}</p>`;
+      }
+    }
+    loadDashboardData();
+  </script>
+</body>
+</html>

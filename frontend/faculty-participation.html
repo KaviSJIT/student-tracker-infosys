@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Submit Participation – Faculty – CompanyConnect</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <style>
+    .tab-bar { display:flex; gap:4px; background:var(--surface2); border-radius:12px; padding:4px; margin-bottom:24px; width:fit-content; }
+    .tab-btn { padding:9px 24px; border-radius:9px; border:none; background:none; color:var(--text3); font-size:13.5px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:var(--font-body); }
+    .tab-btn.active { background:#fff; color:var(--primary); box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    .upload-zone { border:2px dashed var(--border); border-radius:12px; padding:32px; text-align:center; cursor:pointer; transition:all 0.2s; background:var(--surface2); }
+    .upload-zone:hover, .upload-zone.dragover { border-color:var(--primary); background:rgba(139,92,246,0.05); }
+    .upload-zone input[type="file"] { display:none; }
+    .upload-icon { font-size:36px; margin-bottom:12px; }
+    .upload-zone p { font-size:13px; color:var(--text3); margin:4px 0; }
+    .file-selected { display:flex; align-items:center; gap:10px; padding:12px; background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.2); border-radius:10px; margin-top:12px; }
+    .file-selected span { font-size:13px; font-weight:600; color:var(--text1); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .file-selected button { background:none; border:none; color:var(--text3); cursor:pointer; font-size:16px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand" style="text-decoration:none;"><div class="brand-hex">⬡</div><div><div class="brand-name">CompanyConnect</div><div class="brand-sub">Infosys Springboard Tracker</div></div></a>
+    <div class="nav-links"><span id="navUser" style="color:rgba(255,255,255,0.7);font-size:13px;"></span><a href="login.html" onclick="Auth.logout()" class="btn-nav">Logout</a></div>
+  </nav>
+  <div class="app-layout">
+    <aside class="sidebar"><div class="sidebar-section"><div class="sidebar-label">Faculty Menu</div><div id="sidebarLinks"></div></div></aside>
+    <main class="main-content">
+      <div class="page-header anim"><div class="breadcrumb">Faculty / <span>Submit Participation</span></div><h1>Submit Participation</h1><p>Submit your program details and upload proof documents.</p></div>
+      <div id="alertBox"></div>
+      <div class="tab-bar anim anim-1">
+        <button class="tab-btn active" id="tabPart" onclick="switchTab('participation')">📝 Submit Participation</button>
+        <button class="tab-btn" id="tabUpload" onclick="switchTab('upload')">📎 Upload Document</button>
+      </div>
+
+      <!-- Participation Panel -->
+      <div id="panelParticipation" class="grid-sidebar anim anim-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Participation Details</div><div class="card-tag">FORM</div></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Faculty Name</label><input id="fName" class="form-control" disabled/></div>
+            <div class="form-group"><label class="form-label">Department</label><input id="fDept" class="form-control" disabled/></div>
+          </div>
+          <hr style="margin:20px 0;border-color:var(--border);">
+          <div class="form-group"><label class="form-label">Select Program <span class="req">*</span></label>
+            <select id="fProgram" class="form-control"><option value="">Loading programs...</option></select>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Registration ID <span class="req">*</span></label><input id="fRegId" class="form-control" placeholder="INF2026FAC001"/></div>
+            <div class="form-group"><label class="form-label">Date of Enrollment <span class="req">*</span></label><input type="date" id="fEnrollDate" class="form-control"/></div>
+          </div>
+          <div class="form-group"><label class="form-label">Current Status <span class="req">*</span></label>
+            <select id="fStatus" class="form-control"><option>Doing</option><option>Completed</option></select>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Start Date</label><input type="date" id="fStartDate" class="form-control"/></div>
+            <div class="form-group"><label class="form-label">End Date</label><input type="date" id="fEndDate" class="form-control"/></div>
+          </div>
+          <div class="form-group"><label class="form-label">Project Title</label><input id="fProject" class="form-control" placeholder="e.g. Faculty Development Program"/></div>
+          <div class="form-group"><label class="form-label">Feedback</label><textarea id="fFeedback" class="form-control" rows="3" placeholder="Describe your experience..."></textarea></div>
+          <div class="form-group"><label class="form-label">Certificate Link</label><input id="fCertLink" class="form-control" placeholder="https://springboard.infosys.com/cert/..."/></div>
+          <button class="btn btn-primary btn-lg" id="submitBtn" onclick="submitParticipation()">📝 Submit Participation</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">My Submissions</div></div>
+          <div id="mySubsList"><p class="text-muted">Loading...</p></div>
+        </div>
+      </div>
+
+      <!-- Upload Panel -->
+      <div id="panelUpload" class="grid-sidebar anim anim-2" style="display:none;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Upload PDF Document</div><div class="card-tag">PDF ONLY</div></div>
+          <div class="form-group">
+            <label class="form-label">Program / Activity Name <span class="req">*</span></label>
+            <select id="uProgramName" class="form-control"><option value="">Loading programs...</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Document Type <span class="req">*</span></label>
+            <select id="uDocType" class="form-control">
+              <option value="">Select document type</option>
+              <option>Completion Certificate</option>
+              <option>Registration Screenshot</option>
+              <option>Offer Letter</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">PDF File <span class="req">*</span></label>
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('pdfInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+              <input type="file" id="pdfInput" accept="application/pdf" onchange="onFileSelect(event)"/>
+              <div class="upload-icon">📄</div>
+              <p><strong>Click to browse</strong> or drag & drop your PDF here</p>
+              <p>Maximum file size: 10MB</p>
+            </div>
+            <div id="filePreview" style="display:none;" class="file-selected">
+              <span>📄</span><span id="fileName"></span>
+              <span id="fileSize" style="font-size:11px;color:var(--text3);"></span>
+              <button onclick="clearFile()" title="Remove">✕</button>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Description (optional)</label><textarea id="uDescription" class="form-control" rows="3"></textarea></div>
+          <button class="btn btn-primary btn-lg" id="uploadBtn" onclick="submitDoc()">📎 Upload Document</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">My Submitted Documents</div></div>
+          <div id="docsList"><p class="text-muted">Loading...</p></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    const faculty = requireFaculty();
+    if (faculty) {
+      document.getElementById('navUser').textContent = faculty.name;
+      document.getElementById('sidebarLinks').innerHTML = buildFacultyNav('faculty-participation.html');
+      document.getElementById('fName').value = faculty.name || '';
+      document.getElementById('fDept').value = faculty.department || '';
+      loadPrograms();
+      loadMySubmissions();
+      loadMyDocs();
+    }
+
+    function switchTab(tab) {
+      const isP = tab === 'participation';
+      document.getElementById('tabPart').classList.toggle('active', isP);
+      document.getElementById('tabUpload').classList.toggle('active', !isP);
+      document.getElementById('panelParticipation').style.display = isP ? '' : 'none';
+      document.getElementById('panelUpload').style.display = isP ? 'none' : '';
+    }
+
+    async function loadPrograms() {
+      try {
+        const programs = await apiCall('GET', '/programs/faculty');
+        const opts = '<option value="">Select a program</option>' + programs.map(p => `<option value="${p.name}" data-type="${p.type}">${p.name} (${p.type})</option>`).join('');
+        document.getElementById('fProgram').innerHTML = '<option value="">Select a program</option>' + programs.map(p => `<option value="${p.id}" data-name="${p.name}" data-type="${p.type}">${p.name} (${p.type})</option>`).join('');
+        document.getElementById('uProgramName').innerHTML = opts;
+        const urlProg = new URLSearchParams(location.search).get('prog');
+        if (urlProg) document.getElementById('fProgram').value = urlProg;
+      } catch (e) { console.error(e); }
+    }
+
+    async function submitParticipation() {
+      const sel = document.getElementById('fProgram');
+      const programId = sel.value;
+      const programName = sel.options[sel.selectedIndex]?.dataset.name;
+      const programType = sel.options[sel.selectedIndex]?.dataset.type;
+      const regId = document.getElementById('fRegId').value.trim();
+      const enrollDate = document.getElementById('fEnrollDate').value;
+      if (!programId || !regId || !enrollDate) return showAlert('alertBox', 'Please fill all required fields.', 'error');
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true; btn.textContent = 'Submitting...';
+      try {
+        await apiCall('POST', '/faculty/participation', {
+          programId, programName, programType, regId, enrollDate,
+          status: document.getElementById('fStatus').value,
+          startDate: document.getElementById('fStartDate').value,
+          endDate: document.getElementById('fEndDate').value,
+          project: document.getElementById('fProject').value,
+          feedback: document.getElementById('fFeedback').value,
+          certLink: document.getElementById('fCertLink').value,
+        });
+        showAlert('alertBox', '✅ Participation submitted!', 'success');
+        loadMySubmissions();
+      } catch (e) { showAlert('alertBox', e.message, 'error'); }
+      finally { btn.disabled = false; btn.textContent = '📝 Submit Participation'; }
+    }
+
+    async function loadMySubmissions() {
+      try {
+        const parts = await apiCall('GET', '/faculty/participation');
+        const el = document.getElementById('mySubsList');
+        if (!parts.length) { el.innerHTML = '<p class="text-muted">No submissions yet.</p>'; return; }
+        el.innerHTML = parts.map(p => `
+          <div style="padding:14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:10px;">
+            <div style="font-weight:600;font-size:14px;">${p.programName}</div>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">${typeBadge(p.programType)} ${badgeHTML(p.status)}</div>
+            <div class="text-mono" style="margin-top:8px;">Reg ID: ${p.regId||'—'} · ${formatDate(p.enrollDate)}</div>
+            ${p.status !== 'Completed' ? `
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <select id="status_${p.id}" style="padding:5px 10px;border-radius:8px;border:1px solid var(--border2);font-size:12px;background:var(--surface);color:var(--text);">
+                <option value="Doing" ${p.status==='Doing'?'selected':''}>Doing</option>
+                <option value="Completed">Completed</option>
+              </select>
+              <button onclick="updateStatus('${p.id}')" class="btn btn-sm btn-primary">Update</button>
+            </div>` : ''}
+          </div>`).join('');
+      } catch (e) { document.getElementById('mySubsList').innerHTML = `<p class="text-muted">${e.message}</p>`; }
+    }
+
+    async function updateStatus(id) {
+      const status = document.getElementById('status_' + id).value;
+      try { await apiCall('PUT', `/faculty/participation/${id}`, { status }); showAlert('alertBox', '✅ Status updated!', 'success'); loadMySubmissions(); }
+      catch (e) { showAlert('alertBox', e.message, 'error'); }
+    }
+
+    let selectedFile = null;
+    function onFileSelect(e) { const f = e.target.files[0]; if (f) setFile(f); }
+    function onDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
+    function onDragLeave() { document.getElementById('uploadZone').classList.remove('dragover'); }
+    function onDrop(e) { e.preventDefault(); document.getElementById('uploadZone').classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f && f.type==='application/pdf') setFile(f); else showAlert('alertBox','Only PDF files are allowed.','error'); }
+    function setFile(file) {
+      if (file.size > 10*1024*1024) { showAlert('alertBox','File size must be under 10MB.','error'); return; }
+      selectedFile = file;
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileSize').textContent = (file.size/1024).toFixed(1)+' KB';
+      document.getElementById('filePreview').style.display = 'flex';
+      document.getElementById('uploadZone').style.display = 'none';
+    }
+    function clearFile() { selectedFile=null; document.getElementById('pdfInput').value=''; document.getElementById('filePreview').style.display='none'; document.getElementById('uploadZone').style.display='block'; }
+
+    async function submitDoc() {
+      const programName = document.getElementById('uProgramName').value;
+      const docType = document.getElementById('uDocType').value;
+      if (!programName) return showAlert('alertBox','Please select a program.','error');
+      if (!selectedFile) return showAlert('alertBox','Please select a PDF file.','error');
+      const btn = document.getElementById('uploadBtn');
+      btn.disabled = true; btn.textContent = 'Uploading...';
+      try {
+        const formData = new FormData();
+        formData.append('pdf', selectedFile);
+        formData.append('programName', programName);
+        formData.append('docType', docType);
+        formData.append('description', document.getElementById('uDescription').value.trim());
+        const res = await fetch(`${API}/upload`, { method:'POST', headers:{'Authorization':`Bearer ${Auth.getToken()}`}, body:formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message||'Upload failed.');
+        showAlert('alertBox','✅ Document uploaded successfully!','success');
+        document.getElementById('uProgramName').value=''; document.getElementById('uDescription').value=''; clearFile(); loadMyDocs();
+      } catch (err) { showAlert('alertBox',err.message,'error'); }
+      finally { btn.disabled=false; btn.textContent='📎 Upload Document'; }
+    }
+
+    async function loadMyDocs() {
+      try {
+        const docs = await apiCall('GET', '/upload/my');
+        const el = document.getElementById('docsList');
+        if (!docs.length) { el.innerHTML='<p class="text-muted">No documents submitted yet.</p>'; return; }
+        el.innerHTML = docs.map(d => `
+          <div style="padding:14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:10px;">
+            <div style="font-weight:600;font-size:13.5px;">${d.programName}</div>
+            <div style="font-size:12px;color:var(--text2);margin:4px 0;">${d.docType}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">${badgeHTML(d.status)}<a href="${d.fileUrl}" target="_blank" style="font-size:12px;color:var(--primary);">📄 View PDF</a><span class="text-mono">${formatDate(d.submittedAt)}</span></div>
+          </div>`).join('');
+      } catch (err) { document.getElementById('docsList').innerHTML=`<p class="text-muted">${err.message}</p>`; }
+    }
+  </script>
+</body>
+</html>

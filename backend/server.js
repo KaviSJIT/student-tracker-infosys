@@ -32,6 +32,7 @@ app.get('/api/public/stats', async (req, res) => {
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/student', require('./routes/studentRoutes'));
+app.use('/api/faculty', require('./routes/facultyRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/verification', require('./routes/verificationRoutes'));
 app.use('/api/programs', require('./routes/programRoutes'));

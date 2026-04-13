@@ -4,6 +4,10 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pending Approvals – Admin – CompanyConnect</title>
   <link rel="stylesheet" href="shared.css"/>
+  <style>
+    .filter-btn { padding: 8px 20px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  </style>
 </head>
 <body>
   <nav class="navbar">
@@ -15,11 +19,19 @@
     <main class="main-content">
       <div class="page-header anim">
         <div class="breadcrumb">Admin / <span>Pending Approvals</span></div>
-        <h1>Pending Student Registrations</h1>
-        <p>Review and approve or reject student registration requests.</p>
+        <h1>Pending Registrations</h1>
+        <p>Review and approve or reject student and faculty registration requests.</p>
       </div>
       <div id="alertBox"></div>
-      <div id="pendingCards" class="anim anim-1"><p class="text-muted">Loading...</p></div>
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:4px;background:var(--bg);border-radius:12px;padding:4px;width:fit-content;margin-bottom:24px;">
+        <button class="filter-btn active" id="tabStudents" onclick="showTab('students')">👤 Students</button>
+        <button class="filter-btn" id="tabFaculty" onclick="showTab('faculty')">🎓 Faculty</button>
+      </div>
+
+      <div id="pendingStudents" class="anim anim-1"><p class="text-muted">Loading...</p></div>
+      <div id="pendingFaculty" class="anim anim-1" style="display:none;"><p class="text-muted">Loading...</p></div>
     </main>
   </div>
 
@@ -29,66 +41,86 @@
     if (admin) {
       document.getElementById('navAdmin').textContent = admin.name;
       document.getElementById('sidebarLinks').innerHTML = buildAdminNav('admin-pending.html');
-      loadPending();
+      loadPendingStudents();
+      loadPendingFaculty();
     }
 
-    async function loadPending() {
+    function showTab(tab) {
+      document.getElementById('tabStudents').classList.toggle('active', tab === 'students');
+      document.getElementById('tabFaculty').classList.toggle('active', tab === 'faculty');
+      document.getElementById('pendingStudents').style.display = tab === 'students' ? '' : 'none';
+      document.getElementById('pendingFaculty').style.display = tab === 'faculty' ? '' : 'none';
+    }
+
+    async function loadPendingStudents() {
       try {
         const students = await apiCall('GET', '/admin/students/pending');
-        renderCards(students);
-      } catch (err) {
-        document.getElementById('pendingCards').innerHTML = `<div class="card"><p class="text-muted">${err.message}</p></div>`;
-      }
+        const el = document.getElementById('pendingStudents');
+        if (!students.length) { el.innerHTML = '<div class="card"><p style="text-align:center;padding:32px;" class="text-muted">No pending student registrations. 🎉</p></div>'; return; }
+        el.innerHTML = students.map(s => `
+          <div class="card mb-4" id="card_${s.id}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+              <div>
+                <div style="font-family:var(--font-head);font-size:17px;font-weight:700;">${s.name}</div>
+                <div class="text-mono" style="margin-top:2px;">${s.registerNumber} · ${s.department} · ${s.year}</div>
+                <div style="margin-top:4px;font-size:13px;color:var(--text2);">${s.email} · ${s.phone}</div>
+                <div style="margin-top:4px;font-size:12px;color:var(--text3);">${s.college}</div>
+              </div>
+              <div>${badgeHTML('pending')}</div>
+            </div>
+            <div class="form-group"><label class="form-label">Rejection Reason (required only for reject)</label><input type="text" id="reason_${s.id}" class="form-control" placeholder="e.g. Invalid register number"/></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-success btn-sm" onclick="approveStudent('${s.id}')">✅ Approve</button>
+              <button class="btn btn-danger btn-sm" onclick="rejectStudent('${s.id}')">❌ Reject</button>
+            </div>
+          </div>`).join('');
+      } catch (err) { document.getElementById('pendingStudents').innerHTML = `<div class="card"><p class="text-muted">${err.message}</p></div>`; }
     }
 
-    function renderCards(students) {
-      const el = document.getElementById('pendingCards');
-      if (!students.length) {
-        el.innerHTML = '<div class="card"><p style="text-align:center;padding:32px;" class="text-muted">No pending registrations. 🎉</p></div>';
-        return;
-      }
-      el.innerHTML = students.map(s => `
-        <div class="card mb-4" id="card_${s.id}">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-            <div>
-              <div style="font-family:var(--font-head);font-size:17px;font-weight:700;">${s.name}</div>
-              <div class="text-mono" style="margin-top:2px;">${s.registerNumber} · ${s.department} · ${s.year}</div>
-              <div style="margin-top:4px;font-size:13px;color:var(--text2);">${s.email} · ${s.phone}</div>
-              <div style="margin-top:4px;font-size:12px;color:var(--text3);">${s.college}</div>
+    async function loadPendingFaculty() {
+      try {
+        const faculty = await apiCall('GET', '/admin/faculty/pending');
+        const el = document.getElementById('pendingFaculty');
+        if (!faculty.length) { el.innerHTML = '<div class="card"><p style="text-align:center;padding:32px;" class="text-muted">No pending faculty registrations. 🎉</p></div>'; return; }
+        el.innerHTML = faculty.map(f => `
+          <div class="card mb-4" id="fcard_${f.id}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+              <div>
+                <div style="font-family:var(--font-head);font-size:17px;font-weight:700;">${f.name}</div>
+                <div class="text-mono" style="margin-top:2px;">${f.employeeId} · ${f.department} · ${f.designation}</div>
+                <div style="margin-top:4px;font-size:13px;color:var(--text2);">${f.email} · ${f.phone}</div>
+                <div style="margin-top:4px;font-size:12px;color:var(--text3);">${f.college}</div>
+              </div>
+              <div>${badgeHTML('pending')}</div>
             </div>
-            <div>${badgeHTML('pending')}</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Rejection Reason (required only for reject)</label>
-            <input type="text" id="reason_${s.id}" class="form-control" placeholder="e.g. Invalid register number"/>
-          </div>
-          <div style="display:flex;gap:10px;">
-            <button class="btn btn-success btn-sm" onclick="approveStudent('${s.id}')">✅ Approve</button>
-            <button class="btn btn-danger btn-sm" onclick="rejectStudent('${s.id}')">❌ Reject</button>
-          </div>
-        </div>`).join('');
+            <div class="form-group"><label class="form-label">Rejection Reason (required only for reject)</label><input type="text" id="freason_${f.id}" class="form-control" placeholder="e.g. Not a valid employee"/></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-success btn-sm" onclick="approveFaculty('${f.id}')">✅ Approve</button>
+              <button class="btn btn-danger btn-sm" onclick="rejectFaculty('${f.id}')">❌ Reject</button>
+            </div>
+          </div>`).join('');
+      } catch (err) { document.getElementById('pendingFaculty').innerHTML = `<div class="card"><p class="text-muted">${err.message}</p></div>`; }
     }
 
     async function approveStudent(uid) {
-      try {
-        await apiCall('PUT', `/admin/students/${uid}/approve`);
-        showAlert('alertBox', 'Student approved successfully.', 'success');
-        document.getElementById(`card_${uid}`)?.remove();
-      } catch (err) {
-        showAlert('alertBox', err.message, 'error');
-      }
+      try { await apiCall('PUT', `/admin/students/${uid}/approve`); showAlert('alertBox', 'Student approved.', 'success'); document.getElementById(`card_${uid}`)?.remove(); }
+      catch (err) { showAlert('alertBox', err.message, 'error'); }
     }
-
     async function rejectStudent(uid) {
       const reason = document.getElementById(`reason_${uid}`).value.trim();
       if (!reason) return showAlert('alertBox', 'Please provide a rejection reason.', 'error');
-      try {
-        await apiCall('PUT', `/admin/students/${uid}/reject`, { reason });
-        showAlert('alertBox', 'Student rejected.', 'success');
-        document.getElementById(`card_${uid}`)?.remove();
-      } catch (err) {
-        showAlert('alertBox', err.message, 'error');
-      }
+      try { await apiCall('PUT', `/admin/students/${uid}/reject`, { reason }); showAlert('alertBox', 'Student rejected.', 'success'); document.getElementById(`card_${uid}`)?.remove(); }
+      catch (err) { showAlert('alertBox', err.message, 'error'); }
+    }
+    async function approveFaculty(uid) {
+      try { await apiCall('PUT', `/admin/faculty/${uid}/approve`); showAlert('alertBox', 'Faculty approved.', 'success'); document.getElementById(`fcard_${uid}`)?.remove(); }
+      catch (err) { showAlert('alertBox', err.message, 'error'); }
+    }
+    async function rejectFaculty(uid) {
+      const reason = document.getElementById(`freason_${uid}`).value.trim();
+      if (!reason) return showAlert('alertBox', 'Please provide a rejection reason.', 'error');
+      try { await apiCall('PUT', `/admin/faculty/${uid}/reject`, { reason }); showAlert('alertBox', 'Faculty rejected.', 'success'); document.getElementById(`fcard_${uid}`)?.remove(); }
+      catch (err) { showAlert('alertBox', err.message, 'error'); }
     }
   </script>
 </body>

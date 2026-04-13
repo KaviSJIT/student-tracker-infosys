@@ -28,7 +28,7 @@
             <div class="card-title">Progress by Type</div>
             <span id="liveIndicator" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#22c55e;font-weight:600;"><span style="width:8px;height:8px;background:#22c55e;border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>LIVE</span>
           </div>
-          <canvas id="barChart" height="100"></canvas>
+          <canvas id="barChart" height="100" style="background:transparent;"></canvas>
         </div>
       </div>
 
@@ -111,20 +111,42 @@
 
         if (barChartInstance) barChartInstance.destroy();
         barChartInstance = new Chart(document.getElementById('barChart'), {
-          type: 'bar',
+          type: 'line',
           data: {
             labels: types,
             datasets: [
-              { label: 'Completed', data: completedByType, backgroundColor: '#10b981', borderRadius: 6 },
-              { label: 'In Progress', data: doingByType, backgroundColor: '#8b5cf6', borderRadius: 6 },
+              {
+                label: 'Completed',
+                data: completedByType,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16,185,129,0.15)',
+                pointBackgroundColor: '#10b981',
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                fill: true,
+                tension: 0.5,
+                borderWidth: 3,
+              },
+              {
+                label: 'In Progress',
+                data: doingByType,
+                borderColor: '#3b28cc',
+                backgroundColor: 'rgba(59,40,204,0.1)',
+                pointBackgroundColor: '#3b28cc',
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                fill: true,
+                tension: 0.5,
+                borderWidth: 3,
+              },
             ]
           },
           options: {
             responsive: true,
-            plugins: { legend: { labels: { color: '#94a3b8', font: { size: 12 } } } },
+            plugins: { legend: { labels: { color: '#475569', font: { size: 12 } } } },
             scales: {
-              x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-              y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+              x: { ticks: { color: '#475569' }, grid: { color: 'rgba(0,0,0,0.06)' } },
+              y: { ticks: { color: '#475569', stepSize: 1, precision: 0 }, grid: { color: 'rgba(0,0,0,0.06)' }, beginAtZero: true }
             }
           }
         });
@@ -147,8 +169,7 @@
       }
     }
 
-    // Live refresh every 10 seconds
-    setInterval(loadDashboardData, 10000);
+    loadDashboardData();
   </script>
 </body>
 </html>

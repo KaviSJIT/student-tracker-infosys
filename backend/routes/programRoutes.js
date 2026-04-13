@@ -3,20 +3,32 @@ const router = express.Router();
 const { db } = require('../firebase');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
 
-// Public: get all programs
+// Public: get programs for students (all or students)
 router.get('/', async (req, res) => {
   try {
     const snap = await db.collection('programs').get();
-    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const filtered = all.filter(p => !p.assignTo || p.assignTo === 'all' || p.assignTo === 'students');
+    res.json(filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+// Faculty: get programs assigned to faculty
+router.get('/faculty', verifyToken, async (req, res) => {
+  try {
+    const snap = await db.collection('programs').get();
+    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const filtered = all.filter(p => p.assignTo === 'faculty' || p.assignTo === 'all');
+    res.json(filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
 // Admin: add program
 router.post('/', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const { name, type, desc, duration, eligibility, start, end } = req.body;
+    const { name, type, desc, duration, eligibility, start, end, assignTo } = req.body;
     if (!name || !type) return res.status(400).json({ message: 'Name and type required.' });
-    const ref = await db.collection('programs').add({ name, type, desc: desc || '', duration: duration || '—', eligibility: eligibility || 'All Students', start: start || '', end: end || '', createdAt: new Date().toISOString() });
+    const ref = await db.collection('programs').add({ name, type, desc: desc || '', duration: duration || '—', eligibility: eligibility || 'All Students', start: start || '', end: end || '', assignTo: assignTo || 'all', createdAt: new Date().toISOString() });
     res.status(201).json({ message: 'Program added.', id: ref.id });
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
