@@ -40,6 +40,7 @@
             <option value="faculty">Faculty Only</option>
           </select>
         </div>
+        <div class="form-group"><label class="form-label">Program Link</label><input id="pLink" class="form-control" placeholder="https://springboard.infosys.com/..."/><small style="color:var(--text3);font-size:11px;">Direct link to the program registration page</small></div>
         <button class="btn btn-primary btn-lg" id="addBtn" onclick="addProgram()">➕ Add Program</button>
       </div>
 
@@ -73,6 +74,7 @@
                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${typeBadge(p.type)}<span class="text-mono">${p.duration || '—'}</span><span class="badge badge-submitted">${p.assignTo === 'faculty' ? '🎓 Faculty' : p.assignTo === 'students' ? '👤 Students' : '👥 All'}</span></div>
                 <div class="text-mono">${formatDate(p.start)} → ${formatDate(p.end)}</div>
                 ${p.desc ? `<div style="margin-top:6px;font-size:12px;color:var(--text2);">${p.desc}</div>` : ''}
+                ${p.link ? `<div style="margin-top:6px;"><a href="${p.link}" target="_blank" style="font-size:12px;color:var(--primary);">🔗 Program Link</a></div>` : ''}
               </div>
               <button class="btn btn-danger btn-sm" style="margin-left:12px;" onclick="deleteProgram('${p.id}')">Delete</button>
             </div>
@@ -94,9 +96,10 @@
           duration: document.getElementById('pDuration').value || '—',
           eligibility: document.getElementById('pEligibility').value || 'All Students',
           assignTo: document.getElementById('pAssignTo').value,
+          link: document.getElementById('pLink').value.trim(),
         });
         showAlert('alertBox', 'Program added successfully!', 'success');
-        ['pName', 'pDesc', 'pStart', 'pEnd', 'pDuration', 'pEligibility'].forEach(id => document.getElementById(id).value = '');
+        ['pName', 'pDesc', 'pStart', 'pEnd', 'pDuration', 'pEligibility', 'pLink'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('pAssignTo').value = 'all';
         loadPrograms();
       } catch (e) {

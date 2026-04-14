@@ -88,8 +88,8 @@
             </div>
           </div>
           <div class="pc-bottom">
-            <a href="participation.html?prog=${p.id}" class="btn btn-primary">Enroll Now</a>
-            <a href="upload.html" class="btn btn-outline">Upload Proof</a>
+            <a href="${p.link || ('participation.html?prog=' + p.id)}" ${p.link ? 'target="_blank"' : ''} class="btn btn-primary">Enroll Now</a>
+            <a href="participation.html?prog=${p.id}" class="btn btn-outline">Submit Participation</a>
           </div>
         </div>`;
       }).join('');

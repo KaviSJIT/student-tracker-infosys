@@ -350,40 +350,24 @@
     }
 
     function applyStats(statsObj) {
-      // statsObj should ideally have keys that we care about. 
-      // If we don't have matching keys, we use default UI values to match the image exactly.
-      const val1 = statsObj.totalStudents || defaultStats[0];
-      const val2 = statsObj.enrolled || defaultStats[1]; 
-      const val3 = statsObj.verified || defaultStats[2];
-      const val4 = statsObj.completed || defaultStats[3];
-
-      const vals = [val1, val2, val3, val4];
-
-      ids.forEach((id, idx) => {
-        const el = document.getElementById(id);
-        animateValue(el, 0, vals[idx], 2000);
+      const val1 = statsObj.totalStudents || 0;
+      const val2 = statsObj.enrolled      || 0;
+      const val3 = statsObj.verified      || 0;
+      const val4 = statsObj.completed     || 0;
+      [['s-total',val1],['s-internships',val2],['s-certs',val3],['s-events',val4]].forEach(([id,val]) => {
+        animateValue(document.getElementById(id), 0, val, 2000);
       });
     }
 
     function loadStats() {
       fetch('http://localhost:5000/api/public/stats')
         .then(r => r.json())
-        .then(data => applyStats(data))
-        .catch(err => {
-          console.log('Using default mock stats due to fetch error:', err);
-          applyStats({
-             totalStudents: defaultStats[0],
-             enrolled: defaultStats[1],
-             verified: defaultStats[2],
-             completed: defaultStats[3]
-          });
-        });
+        .then(data => { if (!data.message) applyStats(data); })
+        .catch(() => {});
     }
 
-    // Load initially and update every 5 seconds as requested "whenever finishes" 
-    // short polling covers this without WebSockets
     loadStats();
-    setInterval(loadStats, 5000);
+    setInterval(loadStats, 30000);
 
 
     // Carousel Logic
@@ -397,9 +381,10 @@
 
     async function loadPrograms() {
       try {
-        const res = await fetch('http://localhost:5000/api/programs');
-        const programs = await res.json();
-        if (!programs.length) return;
+        const res = await fetch('http://localhost:5000/api/programs/all-public');
+        const data = await res.json();
+        const programs = Array.isArray(data) ? data : [];
+        if (!programs.length) throw new Error('empty');
 
         track.innerHTML = programs.map(p => `
           <div class="program-card">
@@ -411,23 +396,41 @@
             <div class="program-desc">${p.desc || 'Infosys Springboard program'}</div>
             <a href="login.html" class="btn-view">View Details &rarr;</a>
           </div>`).join('');
-
-        dotsContainer.innerHTML = '';
-        const cards = Array.from(track.children);
-        cards.forEach((_, idx) => {
-          const dot = document.createElement('div');
-          dot.classList.add('dot');
-          if (idx === currentIndex) dot.classList.add('active');
-          dot.addEventListener('click', () => goToSlide(idx));
-          dotsContainer.appendChild(dot);
-        });
-
-        currentIndex = Math.min(1, cards.length - 1);
-        updateCarousel();
-        startInterval();
+        buildDots();
       } catch (e) {
-        console.log('Could not load programs:', e.message);
+        // Fallback programs when API fails
+        const fallback = [
+          { type:'Training',       name:'Machine Learning Fundamentals', desc:'AI & ML training program' },
+          { type:'Certification',  name:'Python Certification',          desc:'Advanced Python programming' },
+          { type:'Workshop',       name:'Fullstack MERN Workshop',        desc:'Full-stack web development' },
+          { type:'Internship',     name:'Cloud Computing Internship',     desc:'Cloud infrastructure program' },
+          { type:'Certification',  name:'Infosys Cloud Program',          desc:'Cloud certification program' },
+        ];
+        track.innerHTML = fallback.map(p => `
+          <div class="program-card">
+            <div class="program-top">
+              <div style="font-size:28px;">${p.type==='Internship'?'💼':p.type==='Certification'?'🏅':p.type==='Workshop'?'🛠️':'📚'}</div>
+              <div class="program-badge" style="color:${typeColors[p.type]||'#fff'};">${p.type}</div>
+            </div>
+            <div class="program-title">${p.name}</div>
+            <div class="program-desc">${p.desc}</div>
+            <a href="login.html" class="btn-view">View Details &rarr;</a>
+          </div>`).join('');
+        buildDots();
       }
+    }
+
+    function buildDots() {
+      dotsContainer.innerHTML = '';
+      const cards = Array.from(track.children);
+      cards.forEach((_, idx) => {
+        const dot = document.createElement('div');
+        dot.classList.add('dot');
+        dot.addEventListener('click', () => goToSlide(idx));
+        dotsContainer.appendChild(dot);
+      });
+      currentIndex = Math.min(1, cards.length - 1);
+      setTimeout(() => { updateCarousel(); startInterval(); }, 50);
     }
 
     function updateCarousel() {
